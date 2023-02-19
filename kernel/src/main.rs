@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
+#![feature(abi_x86_interrupt)]
 
 #[macro_use] extern crate log;
 
@@ -17,6 +18,8 @@ mod util;
 mod panic_handler;
 mod framebuffer;
 mod logger;
+mod gdt;
+mod interrupts;
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
@@ -27,23 +30,19 @@ pub static BOOTLOADER_CONFIG: BootloaderConfig = {
 entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
-    framebuffer::init(boot_info);
+    framebuffer::init(&mut boot_info.framebuffer);
     framebuffer::fb_mut().set_clear_color([32,32,32]);
     framebuffer::fb_mut().clear();
     logger::init(log::LevelFilter::max()).unwrap();
     info!("Hello kernel!");
-    // error!("SOMETHING WENT WRONG OH MY FUCKING GOD");
-    // warn!("Something went wrong a little xd");
-    // info!("Overflowing line test Overflowing line test Overflowing line test Overflowing line test Overflowing line test Overflowing line test Overflowing line test woo");
-    // warn!("Testing newlines right abo\nut now!!! Yeah haha\nwoo newlines!");
 
-    // warn!("Even formatting works!: {}", 1);
+    gdt::init();
+    interrupts::init_idt();
 
-    // panic!("Test panic");
+    debug!("Mem offset boot_info: {:0X?} (hex)", boot_info.physical_memory_offset);
 
-    for i in 0..1024 {
-        warn!("big printing {}", i);
-    }
+    debug!("Testing IDT...");
+    x86_64::instructions::interrupts::int3();
 
     loop {}
 }

@@ -4,6 +4,7 @@ use bootloader_api::{
         FrameBuffer,
         FrameBufferInfo,
         PixelFormat,
+        Optional,
     },
 };
 
@@ -195,14 +196,8 @@ impl FbWrapper {
     }
 }
 
-pub fn init(boot_info: &'static mut BootInfo) {
-    // if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
-    //     for byte in framebuffer.buffer_mut() {
-    //         *byte = 0x90;
-    //     }
-    // }
-
-    if let Some(framebuffer) = boot_info.framebuffer.as_mut() {
+pub fn init(boot_info_framebuffer: &'static mut Optional<FrameBuffer>) {
+    if let Some(framebuffer) = boot_info_framebuffer.as_mut() {
         unsafe {
             FRAMEBUFFER = Some(FbWrapper::new(framebuffer));
         }

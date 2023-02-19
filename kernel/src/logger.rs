@@ -14,18 +14,18 @@ impl KernelLogger {
 }
 
 impl log::Log for KernelLogger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        true
     }
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            // println!("{} - {}", record.level(), record.args());
             let level = record.level();
             let level_color = match level {
                 Level::Error => [255, 48, 64],
                 Level::Warn => [222, 144, 27],
                 Level::Info => [50, 168, 82],
+                Level::Debug => [50, 168, 157],
                 _ => [255, 255, 255],
             };
             let spacing = match level {
@@ -33,7 +33,7 @@ impl log::Log for KernelLogger {
                 Level::Info => true,
                 _ => false,
             };
-            let mut buf = [0u8; 128];
+            let mut buf = [0u8; 1024];
             let mut lock = self.y.lock(); // This lock also synchronizes printing
             let fb = framebuffer::fb_mut();
             if *lock >= fb.height() {
