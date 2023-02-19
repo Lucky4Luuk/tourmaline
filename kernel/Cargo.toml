@@ -12,10 +12,11 @@ panic = "abort"
 [dependencies]
 bootloader_api = "0.11"
 x86_64 = "0.14.10"
+raw-cpuid = "10.6.1"
 # uefi = "0.19.1"
 
 spin = { version = "0.9.5", features = ["mutex"] }
 lazy_static = { version = "1.4", features = ["spin_no_std"] }
 
 log = "0.4"
-noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_20", "size_32"] }
+noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_16", "size_20", "size_32"] }

@@ -28,6 +28,13 @@ impl Rect {
     }
 }
 
+#[derive(Copy, Clone)]
+pub enum TextSize {
+    Small,
+    Normal,
+    Big,
+}
+
 pub struct FbWrapper {
     fb: &'static mut FrameBuffer,
     info: FrameBufferInfo,
@@ -57,16 +64,16 @@ impl FbWrapper {
     pub fn height(&self) -> usize { self.info.height }
 
     // TODO: Use bottom of area to stop printing
-    pub fn print(&mut self, area: &Rect, color: [u8; 3], big: bool, text: &str) -> (usize, usize) {
+    pub fn print(&mut self, area: &Rect, color: [u8; 3], size: TextSize, text: &str) -> (usize, usize) {
         use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
 
         let mut x = area.x0;
         let mut y = area.y0;
 
-        let (size, size_num) = if big {
-            (RasterHeight::Size32, 32)
-        } else {
-            (RasterHeight::Size20, 20)
+        let (size, size_num) = match size {
+            TextSize::Small => (RasterHeight::Size16, 16),
+            TextSize::Normal => (RasterHeight::Size20, 20),
+            TextSize::Big => (RasterHeight::Size32, 32),
         };
 
         let mut delta_height = 0;

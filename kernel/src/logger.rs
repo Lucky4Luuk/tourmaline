@@ -33,7 +33,9 @@ impl log::Log for KernelLogger {
                 Level::Info => true,
                 _ => false,
             };
-            let mut buf = [0u8; 1024];
+            // let size = framebuffer::TextSize::Small;
+            let size = framebuffer::TextSize::Normal;
+            let mut buf = [0u8; 4096];
             let mut lock = self.y.lock(); // This lock also synchronizes printing
             let fb = framebuffer::fb_mut();
             if *lock >= fb.height() {
@@ -41,15 +43,15 @@ impl log::Log for KernelLogger {
                 fb.clear();
             }
             let mut area = framebuffer::Rect::new(0, *lock, fb.width(), fb.height());
-            let (width, delta_height) = fb.print(&area, level_color, false, util::show(&mut buf, format_args!("[{}] ", level.as_str())).unwrap_or("FMT FAILED"));
+            let (width, delta_height) = fb.print(&area, level_color, size, util::show(&mut buf, format_args!("[{}] ", level.as_str())).unwrap_or("FMT FAILED"));
             area.x0 = width;
             area.y0 += delta_height;
             if spacing {
-                let (width, delta_height) = fb.print(&area, level_color, false, " ");
+                let (width, delta_height) = fb.print(&area, level_color, size, " ");
                 area.x0 = width;
                 area.y0 += delta_height;
             }
-            let (_, delta_height) = fb.print(&area, [255, 255, 255], false, util::show(&mut buf, format_args!("{}\n", record.args())).unwrap_or("FMT FAILED\n"));
+            let (_, delta_height) = fb.print(&area, [255, 255, 255], size, util::show(&mut buf, format_args!("{}\n", record.args())).unwrap_or("FMT FAILED\n"));
             area.y0 += delta_height;
             *lock = area.y0;
         }

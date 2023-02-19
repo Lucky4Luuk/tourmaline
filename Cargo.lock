@@ -290,6 +290,7 @@ dependencies = [
  "lazy_static",
  "log",
  "noto-sans-mono-bitmap",
+ "raw-cpuid",
  "spin 0.9.5",
  "x86_64",
 ]
@@ -416,6 +417,15 @@ name = "radium"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
+
+[[package]]
+name = "raw-cpuid"
+version = "10.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c307f7aacdbab3f0adee67d52739a1d71112cc068d6fab169ddeb18e48877fad"
+dependencies = [
+ "bitflags",
+]
 
 [[package]]
 name = "redox_syscall"
