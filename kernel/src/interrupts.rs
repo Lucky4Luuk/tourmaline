@@ -30,7 +30,14 @@ extern "x86-interrupt" fn double_fault_handler(stack_frame: InterruptStackFrame,
 
 extern "x86-interrupt" fn page_fault_handler(stack_frame: InterruptStackFrame, error_code: PageFaultErrorCode) {
     use x86_64::registers::control::Cr2;
-    error!("EXCEPTION: PAGE FAULT\n{:#?}\nError code: {:?}\nAccessed address: {:?}", stack_frame, error_code, Cr2::read());
+    let addr = Cr2::read();
+    error!("EXCEPTION: PAGE FAULT\n{:#?}\nError code: {:?}\nAccessed address: {:?}", stack_frame, error_code, addr);
+    // if error_code.is_empty() {
+    //     let page = x86_64::structures::paging::Page::containing_address(addr);
+    //     unsafe { crate::memory::map_page(page, None).expect("Failed to map page!"); }
+    //     debug!("Page now allocated!");
+    //     return;
+    // }
     loop {} //Halt loop, as we cannot proceed with execution until our page fault has been resolved
 }
 
