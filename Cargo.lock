@@ -424,6 +424,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexmap-nostd"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e04e2fd2b8188ea827b32ef11de88377086d690286ab35747ef7f9bf3ccb590"
+
+[[package]]
 name = "instant"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -452,14 +458,20 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "bootloader_api",
+ "cranelift-codegen",
+ "cranelift-entity",
  "cranelift-native",
  "cranelift-wasm",
+ "indexmap-nostd",
  "lazy_static",
  "log",
+ "more-asserts",
  "noto-sans-mono-bitmap",
  "raw-cpuid 10.6.1",
+ "shell",
  "slab_allocator_rs",
  "spin 0.9.5",
+ "target-lexicon",
  "x86_64",
 ]
 
@@ -524,6 +536,12 @@ dependencies = [
  "serde-big-array",
  "thiserror",
 ]
+
+[[package]]
+name = "more-asserts"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
 
 [[package]]
 name = "noto-sans-mono-bitmap"
@@ -719,6 +737,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "shell"
+version = "0.1.0"
+
+[[package]]
 name = "slab_allocator_rs"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -859,6 +881,7 @@ dependencies = [
  "bootloader",
  "kernel",
  "ovmf-prebuilt",
+ "shell",
 ]
 
 [[package]]

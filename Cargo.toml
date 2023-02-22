@@ -5,7 +5,8 @@ edition = "2021"
 
 [build-dependencies]
 bootloader = "0.11"
-kernel = { path = "kernel", artifact = "bin", target = "x86_64-unknown-none", build-std = ["core", "compiler_builtins", "alloc"] }
+kernel = { path = "kernel", artifact = "bin", target = "x86_64-unknown-none" }
+shell = { path = "shell", artifact = "bin", target = "wasm32-unknown-unknown" }
 
 [dependencies]
 ovmf-prebuilt = "0.1.0-alpha.1"

@@ -5,8 +5,9 @@
 #![feature(asm_sym)]
 #![feature(alloc_error_handler)]
 
+#[macro_use] extern crate alloc;
 #[macro_use] extern crate log;
-extern crate alloc;
+#[macro_use] extern crate target_lexicon;
 
 use core::arch::asm;
 
@@ -33,7 +34,10 @@ mod gdt;
 mod interrupts;
 mod memory;
 mod heap;
-mod ring3;
+mod wasm;
+// mod ring3;
+
+const SHELL: &'static [u8] = include_bytes!(env!("SHELL_PATH"));
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
@@ -43,12 +47,14 @@ pub static BOOTLOADER_CONFIG: BootloaderConfig = {
 
 entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     framebuffer::init(&mut boot_info.framebuffer);
     framebuffer::fb_mut().set_clear_color([32,32,32]);
     framebuffer::fb_mut().clear();
     logger::init(log::LevelFilter::max()).unwrap();
-    info!("Hello kernel!");
+    info!("Hello kernel! Version: {}", VERSION);
 
     trace!("fb buffer addr: {:p}", framebuffer::fb_mut().buffer_mut());
 
@@ -66,6 +72,10 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
     heap::init();
     info!("Heap initialized!");
+
+    info!("Compiling shell...");
+    let shell = wasm::WasmProgram::from_wasm_bytes("shell", SHELL);
+    info!("Shell compiled!");
 
     // let page = Page::containing_address(VirtAddr::new(0xdeadbeaf));
     // unsafe {

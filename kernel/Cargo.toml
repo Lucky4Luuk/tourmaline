@@ -3,14 +3,14 @@ name = "kernel"
 version = "0.1.0"
 edition = "2021"
 
-[unstable]
-build-std = ["core", "compiler_builtins", "alloc"]
-
 [profile.dev]
 panic = "abort"
 
 [profile.release]
 panic = "abort"
+
+[build-dependencies]
+shell = { path = "../shell", artifact = "bin", target = "wasm32-unknown-unknown" }
 
 [dependencies]
 bootloader_api = "0.11"
@@ -25,31 +25,12 @@ slab_allocator_rs = "1.0.2"
 log = "0.4"
 noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_16", "size_20", "size_32"] }
 
-# hashmap_core = "0.1.8"
-
 # Cranelift compiler
-# [dependencies.target-lexicon]
-# version = "0.0.3"
-# default-features = false
-
+target-lexicon = "0.8.1"
+cranelift-codegen = { path = "../cranelift-no_std/cranelift-codegen", default-features = false, features = ["core"] }
+cranelift-entity = { path = "../cranelift-no_std/cranelift-entity", default-features = false, features = ["core"] }
 cranelift-native = { path = "../cranelift-no_std/cranelift-native", default-features = false, features = ["core"] }
 cranelift-wasm = { path = "../cranelift-no_std/cranelift-wasm", default-features = false, features = ["core"] }
-# [dependencies.cranelift-codegen]
-# version = "0.82"
-# default-features = false
-# features = ["core"]
 
-# [dependencies.cranelift-frontend]
-# version = "0.33"
-# default-features = false
-# features = ["core"]
-
-# [dependencies.cranelift-wasm]
-# version = "0.33"
-# default-features = false
-# features = ["core"]
-
-# [dependencies.cranelift-native]
-# version = "0.43.1"
-# default-features = false
-# features = ["core"]
+indexmap-nostd = { veresion = "0.4.0", default-features = false }
+more-asserts = "0.2.1"
