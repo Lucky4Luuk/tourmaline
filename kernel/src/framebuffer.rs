@@ -8,7 +8,7 @@ use bootloader_api::{
     },
 };
 
-static mut FRAMEBUFFER: Option<FbWrapper> = None;
+pub static mut FRAMEBUFFER: Option<FbWrapper> = None;
 
 pub struct Rect {
     pub x0: usize,
@@ -49,6 +49,11 @@ impl FbWrapper {
             info,
             clear_color: [0,0,0],
         }
+    }
+
+    #[inline]
+    pub fn buffer_mut(&mut self) -> &mut [u8] {
+        self.fb.buffer_mut()
     }
 
     pub fn set_clear_color(&mut self, color: [u8; 3]) {
@@ -213,6 +218,7 @@ pub fn init(boot_info_framebuffer: &'static mut Optional<FrameBuffer>) {
     }
 }
 
+#[inline]
 pub fn fb_mut() -> &'static mut FbWrapper {
     unsafe {
         FRAMEBUFFER.as_mut().unwrap()

@@ -13,23 +13,36 @@ pub unsafe fn init_syscalls() {
         xor rax, rax
         mov rdx, 0x230008
         wrmsr",
-        in("rcx") MSR_STAR,
+        in("rax") MSR_STAR,
     );
 }
 
-pub fn user_program() {
-    use x86_64::instructions::nop;
+#[no_mangle]
+pub unsafe extern "C" fn user_program() {
+    // use x86_64::instructions::nop;
 
-    panic!("waaah");
+    x86_64::instructions::interrupts::int3();
 
-    unsafe { asm!("cli"); }
+    // unsafe { asm!("cli"); }
+    // unsafe {
+    //     let ptr = 0x18_000_000_000 as *mut [u8; 20];
+    //     for i in 0..20 {
+    //         (*ptr)[i] = 255;
+    //     }
+    // }
 
-    nop();
-    nop();
-    nop();
+    // nop();
+    // nop();
+    // nop();
 }
 
 pub unsafe fn jump_usermode(code: x86_64::VirtAddr, stack_end: x86_64::VirtAddr) {
+    unsafe {
+        asm!("jmp {value}", value = in(reg) code.as_u64())
+    }
+}
+
+pub unsafe fn old_jump_usermode(code: x86_64::VirtAddr, stack_end: x86_64::VirtAddr) {
     use x86_64::instructions::segmentation::{CS, DS};
     use x86_64::instructions::segmentation::Segment;
     use crate::gdt::GDT;
@@ -44,6 +57,8 @@ pub unsafe fn jump_usermode(code: x86_64::VirtAddr, stack_end: x86_64::VirtAddr)
     let cs_idx = GDT.1.user_code_selector.0;
     let ds_idx = GDT.1.user_data_selector.0;
 
+    init_syscalls();
+
     asm!("\
         push rax
         push rsi
@@ -56,4 +71,22 @@ pub unsafe fn jump_usermode(code: x86_64::VirtAddr, stack_end: x86_64::VirtAddr)
         in("dx") cs_idx,
         in("ax") ds_idx,
     );
+
+    // asm!("
+    //     mov rcx, 0xc0000082
+    //     wrmsr
+    //     mov rcx, 0xc0000080
+    //     rdmsr
+    //     or eax, 1
+    //     wrmsr
+    //     mov rcx, 0xc0000081
+    //     rdmsr
+    //     mov edx, 0x00180008
+    //     wrmsr
+    //
+    //     mov ecx, eax
+    //     mov r11, 0x202
+    //     sysretq",
+    //     in("eax") code.as_u64()
+    // );
 }
