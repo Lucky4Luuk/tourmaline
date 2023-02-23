@@ -76,6 +76,8 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     info!("Compiling shell...");
     let shell = wasm::WasmProgram::from_wasm_bytes("shell", SHELL);
     info!("Shell compiled!");
+    info!("Running shell...");
+    unsafe { shell.run_directly(); }
 
     // let page = Page::containing_address(VirtAddr::new(0xdeadbeaf));
     // unsafe {

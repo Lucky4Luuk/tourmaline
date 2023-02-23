@@ -20,11 +20,11 @@ use cranelift_codegen::binemit::RelocSink;
 
 use tunables::Tunables;
 use module_env::ModuleEnvironment;
-use compilation::Compiler;
+use compilation::{Compiler, Program};
 use cranelift::Cranelift;
 
 pub struct WasmProgram {
-
+    prog: Program,
 }
 
 impl WasmProgram {
@@ -50,7 +50,7 @@ impl WasmProgram {
             (env.result.module, env.result.function_body_inputs)
         };
 
-        Cranelift::compile_module(
+        let result = Cranelift::compile_module(
             &module,
             function_body_inputs,
             &*target_isa,
@@ -58,7 +58,13 @@ impl WasmProgram {
         ).expect("Failed to compile!");
 
         Self {
-
+            prog: Program::from_tuple(result, module.start_func.clone()),
         }
+    }
+
+    pub unsafe fn run_directly(self) -> ! {
+        use core::arch::asm;
+        asm!("jmp {value}", value = in(reg) self.prog.entry_point().unwrap().as_u64());
+        unreachable!()
     }
 }

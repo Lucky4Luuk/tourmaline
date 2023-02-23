@@ -1,15 +1,60 @@
 //! A `Compilation` contains the compiled function bodies for a WebAssembly
 //! module.
 
-use super::address_map::{ModuleAddressMap, ValueLabelsRanges};
-use super::module;
-use super::module_env::FunctionBodyData;
+use core::ops::Range;
 use alloc::vec::Vec;
 use cranelift_codegen::{binemit, ir, isa, CodegenError};
 use cranelift_entity::PrimaryMap;
 use cranelift_wasm::{DefinedFuncIndex, FuncIndex, TranslationState, WasmError};
-use core::ops::Range;
 use thiserror_no_std::Error;
+use x86_64::VirtAddr;
+use super::address_map::{ModuleAddressMap, ValueLabelsRanges};
+use super::module;
+use super::module_env::FunctionBodyData;
+
+pub struct Program {
+    comp: Compilation,
+    reloc: Relocations,
+    mod_addr_map: ModuleAddressMap,
+    val_lab_ranges: ValueLabelsRanges,
+    stack_map: PrimaryMap<DefinedFuncIndex, ir::StackSlots>,
+    traps: Traps,
+
+    start_func: Option<FuncIndex>,
+}
+
+impl Program {
+    pub fn from_tuple(
+        (comp, reloc, mod_addr_map, val_lab_ranges, stack_map, traps): (
+            Compilation,
+            Relocations,
+            ModuleAddressMap,
+            ValueLabelsRanges,
+            PrimaryMap<DefinedFuncIndex, ir::StackSlots>,
+            Traps,
+        ),
+        start_func: Option<FuncIndex>,
+    ) -> Self {
+        Self {
+            comp,
+            reloc,
+            mod_addr_map,
+            val_lab_ranges,
+            stack_map,
+            traps,
+
+            start_func,
+        }
+    }
+
+    pub fn entry_point(&self) -> Option<VirtAddr> {
+        if let Some(func_idx) = &self.start_func {
+            Some(VirtAddr::from_ptr(self.comp.get(DefinedFuncIndex::from_u32(func_idx.as_u32())).body.as_ptr()))
+        } else {
+            None
+        }
+    }
+}
 
 /// Compiled function: machine code body, jump table offsets, and unwind information.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,7 +75,7 @@ type Functions = PrimaryMap<DefinedFuncIndex, CompiledFunction>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Compilation {
     /// Compiled machine code for the function bodies.
-    functions: Functions,
+    pub functions: Functions,
 }
 
 impl Compilation {
