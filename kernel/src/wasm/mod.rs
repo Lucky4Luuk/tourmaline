@@ -3,6 +3,9 @@ mod func_env;
 mod module;
 mod tunables;
 mod vmoffsets;
+mod address_map;
+mod compilation;
+mod cranelift;
 
 /// WebAssembly page sizes are defined to be 64KiB.
 pub const WASM_PAGE_SIZE: u32 = 0x10000;
@@ -12,16 +15,20 @@ pub const WASM_MAX_PAGES: u32 = 0x10000;
 
 use cranelift_codegen::isa::{self, TargetFrontendConfig};
 use cranelift_codegen::settings::{self, Configurable};
+use cranelift_codegen::Context;
+use cranelift_codegen::binemit::RelocSink;
 
 use tunables::Tunables;
 use module_env::ModuleEnvironment;
+use compilation::Compiler;
+use cranelift::Cranelift;
 
-pub struct WasmProgram<'data> {
-    env: ModuleEnvironment<'data>,
+pub struct WasmProgram {
+
 }
 
-impl<'data> WasmProgram<'data> {
-    pub fn from_wasm_bytes(name: &str, raw: &'data [u8]) -> Self {
+impl WasmProgram {
+    pub fn from_wasm_bytes(name: &str, raw: &[u8]) -> Self {
         use core::str::FromStr;
 
         let target_isa = {
@@ -32,14 +39,26 @@ impl<'data> WasmProgram<'data> {
         };
         let conf = target_isa.frontend_config();
         let tunables = Tunables::default();
-        let mut obj = Self {
-            env: ModuleEnvironment::new(conf, tunables)
+
+        let (module, function_body_inputs) = {
+            let mut env = ModuleEnvironment::new(conf, tunables);
+
+            cranelift_wasm::translate_module(raw, &mut env);
+
+            info!("Functions found: {}", env.result().module.functions.len());
+
+            (env.result.module, env.result.function_body_inputs)
         };
 
-        cranelift_wasm::translate_module(raw, &mut obj.env);
+        Cranelift::compile_module(
+            &module,
+            function_body_inputs,
+            &*target_isa,
+            false,
+        ).expect("Failed to compile!");
 
-        debug!("Functions found: {}", obj.env.result().module.functions.len());
+        Self {
 
-        obj
+        }
     }
 }

@@ -58,7 +58,7 @@ impl<'data> ModuleTranslation<'data> {
 /// Object containing the standalone environment information.
 pub struct ModuleEnvironment<'data> {
     /// The result to be filled in.
-    result: ModuleTranslation<'data>,
+    pub result: ModuleTranslation<'data>,
 }
 
 impl<'data> ModuleEnvironment<'data> {

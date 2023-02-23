@@ -18,6 +18,7 @@ x86_64 = "0.14.10"
 raw-cpuid = "10.6.1"
 # uefi = "0.19.1"
 
+thiserror-no-std = "2.0.2"
 spin = { version = "0.9.5", features = ["mutex"] }
 lazy_static = { version = "1.4", features = ["spin_no_std"] }
 slab_allocator_rs = "1.0.2"
