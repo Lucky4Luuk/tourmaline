@@ -1,6 +1,7 @@
 use x86_64::VirtAddr;
 use x86_64::structures::paging::Page;
-use slab_allocator_rs::LockedHeap;
+// use slab_allocator_rs::LockedHeap;
+use linked_list_allocator::LockedHeap;
 use crate::memory;
 
 #[global_allocator]
@@ -30,6 +31,6 @@ pub fn init() {
     }
 
     unsafe {
-        ALLOCATOR.init(HEAP_START, HEAP_SIZE);
+        ALLOCATOR.lock().init(HEAP_START as *mut u8, HEAP_SIZE);
     }
 }
