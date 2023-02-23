@@ -58,7 +58,7 @@ impl WasmProgram {
         ).expect("Failed to compile!");
 
         Self {
-            prog: Program::from_tuple(result, module.start_func.clone()),
+            prog: Program::from_tuple(result, module.start_func.clone().map(|func_idx| module.defined_func_index(func_idx)).flatten()),
         }
     }
 

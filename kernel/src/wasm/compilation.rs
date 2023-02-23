@@ -20,7 +20,7 @@ pub struct Program {
     stack_map: PrimaryMap<DefinedFuncIndex, ir::StackSlots>,
     traps: Traps,
 
-    start_func: Option<FuncIndex>,
+    start_func: Option<DefinedFuncIndex>,
 }
 
 impl Program {
@@ -33,7 +33,7 @@ impl Program {
             PrimaryMap<DefinedFuncIndex, ir::StackSlots>,
             Traps,
         ),
-        start_func: Option<FuncIndex>,
+        start_func: Option<DefinedFuncIndex>,
     ) -> Self {
         Self {
             comp,
@@ -48,8 +48,8 @@ impl Program {
     }
 
     pub fn entry_point(&self) -> Option<VirtAddr> {
-        if let Some(func_idx) = &self.start_func {
-            Some(VirtAddr::from_ptr(self.comp.get(DefinedFuncIndex::from_u32(func_idx.as_u32())).body.as_ptr()))
+        if let Some(func_idx) = self.start_func {
+            Some(VirtAddr::from_ptr(self.comp.get(func_idx).body.as_ptr()))
         } else {
             None
         }
