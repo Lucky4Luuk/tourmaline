@@ -1,3 +1,4 @@
-fn main() {
-    panic!("Panic!");
+fn main() -> ! {
+    // panic!("Panic!");
+    loop {}
 }

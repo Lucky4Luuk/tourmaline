@@ -49,7 +49,9 @@ impl Program {
 
     pub fn entry_point(&self) -> Option<VirtAddr> {
         if let Some(func_idx) = self.start_func {
-            Some(VirtAddr::from_ptr(self.comp.get(func_idx).body.as_ptr()))
+            let addr = VirtAddr::from_ptr(self.comp.get(func_idx).body.as_ptr());
+            info!("entry_point: {:?}", addr);
+            Some(addr)
         } else {
             None
         }

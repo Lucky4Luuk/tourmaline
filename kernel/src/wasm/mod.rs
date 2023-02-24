@@ -43,12 +43,18 @@ impl WasmProgram {
         let (module, function_body_inputs) = {
             let mut env = ModuleEnvironment::new(conf, tunables);
 
-            cranelift_wasm::translate_module(raw, &mut env);
+            cranelift_wasm::translate_module(raw, &mut env).expect("Compilation failed!");
 
             info!("Functions found: {}", env.result().module.functions.len());
 
             (env.result.module, env.result.function_body_inputs)
         };
+
+        let mut start_func = module.start_func.clone();
+        if start_func.is_none() {
+            start_func = module.get_exported_function("main");
+        }
+        let start_func = start_func.map(|func_idx| module.defined_func_index(func_idx)).flatten();
 
         let result = Cranelift::compile_module(
             &module,
@@ -58,13 +64,14 @@ impl WasmProgram {
         ).expect("Failed to compile!");
 
         Self {
-            prog: Program::from_tuple(result, module.start_func.clone().map(|func_idx| module.defined_func_index(func_idx)).flatten()),
+            prog: Program::from_tuple(result, start_func),
         }
     }
 
-    pub unsafe fn run_directly(self) -> ! {
-        use core::arch::asm;
-        asm!("jmp {value}", value = in(reg) self.prog.entry_point().unwrap().as_u64());
-        unreachable!()
+    pub unsafe fn run_directly(self) {
+        let virtual_address = self.prog.entry_point().unwrap().as_u64();
+        let ptr = virtual_address as *const ();
+        let code: extern "C" fn() = core::mem::transmute(ptr);
+        (code)();
     }
 }

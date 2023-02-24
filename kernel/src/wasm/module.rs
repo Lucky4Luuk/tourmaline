@@ -194,6 +194,18 @@ impl Module {
         }
     }
 
+    pub fn get_exported_function(&self, name: &str) -> Option<FuncIndex> {
+        if let Some(export) = self.exports.get(name) {
+            if let Export::Function(func_idx) = export {
+                Some(*func_idx)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     /// Convert a `DefinedFuncIndex` into a `FuncIndex`.
     pub fn func_index(&self, defined_func: DefinedFuncIndex) -> FuncIndex {
         FuncIndex::new(self.imported_funcs.len() + defined_func.index())
