@@ -53,9 +53,17 @@ async fn async_number() -> u32 {
     42
 }
 
-async fn example_task() {
-    let number = async_number().await;
+async fn example_task(offset: u32) {
+    let number = async_number().await + offset;
     debug!("async number: {}", number);
+}
+
+async fn spawn_multiple() {
+    let spawner = task_system::spawner::Spawner::new();
+    for i in 0..10 {
+        info!("Spawning task...");
+        spawner.spawn_async(example_task(i)).await;
+    }
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
@@ -83,7 +91,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     info!("Heap initialized!");
 
     let spawner = task_system::spawner::Spawner::new();
-    spawner.spawn(example_task());
+    spawner.spawn(spawn_multiple());
 
     task_system::executor::SimpleExecutor::run()
 }

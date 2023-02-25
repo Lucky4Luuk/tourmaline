@@ -22,6 +22,10 @@ pub fn task_queue_push(task: Task) {
     task_queue().push(task);
 }
 
+pub async fn task_queue_push_async(task: Task) {
+    task_queue().push(task);
+}
+
 fn task_queue_pop() -> Option<Task> {
     task_queue().pop()
 }
