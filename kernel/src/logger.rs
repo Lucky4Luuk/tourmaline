@@ -15,7 +15,8 @@ impl KernelLogger {
 
 impl log::Log for KernelLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
+        // metadata.level() <= Level::Info
+        true
     }
 
     fn log(&self, record: &Record) {

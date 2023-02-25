@@ -9,8 +9,8 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 
-[build-dependencies]
-shell = { path = "../shell", artifact = "bin", target = "wasm32-unknown-unknown" }
+# [build-dependencies]
+# wasm_test = { path = "../wasm_test", artifact = "bin", target = "wasm32-unknown-unknown" }
 
 [dependencies]
 bootloader_api = "0.11"

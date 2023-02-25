@@ -460,7 +460,6 @@ dependencies = [
  "more-asserts",
  "noto-sans-mono-bitmap",
  "raw-cpuid 10.6.1",
- "shell",
  "spin 0.9.5",
  "target-lexicon",
  "thiserror-no-std",
@@ -738,10 +737,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "shell"
-version = "0.1.0"
-
-[[package]]
 name = "smallvec"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -901,7 +896,6 @@ dependencies = [
  "bootloader",
  "kernel",
  "ovmf-prebuilt",
- "shell",
 ]
 
 [[package]]

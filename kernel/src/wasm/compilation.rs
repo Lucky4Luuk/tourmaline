@@ -3,17 +3,19 @@
 
 use core::ops::Range;
 use alloc::vec::Vec;
+
 use cranelift_codegen::{binemit, ir, isa, CodegenError};
 use cranelift_entity::PrimaryMap;
 use cranelift_wasm::{DefinedFuncIndex, FuncIndex, TranslationState, WasmError};
 use thiserror_no_std::Error;
 use x86_64::VirtAddr;
+
 use super::address_map::{ModuleAddressMap, ValueLabelsRanges};
 use super::module;
 use super::module_env::FunctionBodyData;
 
 pub struct Program {
-    comp: Compilation,
+    pub comp: Compilation,
     reloc: Relocations,
     mod_addr_map: ModuleAddressMap,
     val_lab_ranges: ValueLabelsRanges,
