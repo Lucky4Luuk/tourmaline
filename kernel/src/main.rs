@@ -2,7 +2,6 @@
 #![no_main]
 #![feature(panic_info_message)]
 #![feature(abi_x86_interrupt)]
-#![feature(asm_sym)]
 #![feature(alloc_error_handler)]
 
 #[macro_use] extern crate alloc;
@@ -83,16 +82,8 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     heap::init();
     info!("Heap initialized!");
 
-    let mut executor = task_system::executor::SimpleExecutor::new();
-    info!("Executor initialized!");
-    executor.spawn(task_system::task::Task::new(example_task()));
-    executor.run();
+    let spawner = task_system::spawner::Spawner::new();
+    spawner.spawn(example_task());
 
-    // info!("Compiling shell...");
-    // let shell = wasm::WasmProgram::from_wasm_bytes("shell", SHELL);
-    // info!("Shell compiled!");
-    // info!("Running shell...");
-    // unsafe { shell.run_directly(); }
-
-    loop {}
+    task_system::executor::SimpleExecutor::run()
 }

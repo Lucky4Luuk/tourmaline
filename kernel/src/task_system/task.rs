@@ -9,11 +9,11 @@ use core::{
 use alloc::boxed::Box;
 
 pub struct Task {
-    future: Pin<Box<dyn Future<Output = ()>>>,
+    future: Pin<Box< dyn Future<Output = ()> + Send >>,
 }
 
 impl Task {
-    pub fn new(future: impl Future<Output = ()> + 'static) -> Task {
+    pub fn new(future: impl Future<Output = ()> + Send + 'static) -> Task {
         Task {
             future: Box::pin(future),
         }

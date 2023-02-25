@@ -150,6 +150,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "conquer-once"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c6d3a9775a69f6d1fe2cc888999b67ed30257d3da4d2af91984e722f2ec918a"
+dependencies = [
+ "conquer-util",
+]
+
+[[package]]
+name = "conquer-util"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e763eef8846b13b380f37dfecda401770b0ca4e56e95170237bd7c25c7db3582"
+
+[[package]]
 name = "const-random"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -257,6 +272,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d663548de7f5cca343f1e0a48d14dcfb0e9eb4e079ec58883b7251539fa10aeb"
 dependencies = [
  "build_const",
+]
+
+[[package]]
+name = "crossbeam-queue"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1cfb3ea8a53f37c40dea2c7bedcbd88bdfae54f5e2175d6ecaff1c988353add"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fb766fa798726286dbbb842f174001dab8abc7b627a1dd86e0b7222a95d929f"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
@@ -449,10 +483,12 @@ name = "kernel"
 version = "0.1.0"
 dependencies = [
  "bootloader_api",
+ "conquer-once",
  "cranelift-codegen",
  "cranelift-entity",
  "cranelift-native",
  "cranelift-wasm",
+ "crossbeam-queue",
  "indexmap-nostd",
  "lazy_static",
  "linked_list_allocator",
