@@ -49,21 +49,8 @@ entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-async fn async_number() -> u32 {
-    42
-}
-
-async fn example_task(offset: u32) {
-    let number = async_number().await + offset;
-    debug!("async number: {}", number);
-}
-
-async fn spawn_multiple() {
-    let spawner = task_system::spawner::Spawner::new();
-    for i in 0..10 {
-        info!("Spawning task...");
-        spawner.spawn_async(example_task(i)).await;
-    }
+async fn kernel_stage_2() {
+    info!("Kernel stage 2 started!");
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
@@ -91,7 +78,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     info!("Heap initialized!");
 
     let spawner = task_system::spawner::Spawner::new();
-    spawner.spawn(spawn_multiple());
+    spawner.spawn(kernel_stage_2());
 
     task_system::executor::SimpleExecutor::run()
 }
