@@ -45,6 +45,12 @@ impl SimpleExecutor {
     /// Initializes the executor, and never returns
     /// The kernel should simply call this function, and then do everything
     /// afterwards inside async tasks.
+    /// ```
+    ///
+    /// <div class="example-wrap" style="display:inline-block"><pre class="compile_fail" style="white-space:normal;font:inherit;">
+    /// **Warning**: This function should not and will not return!
+    ///
+    /// ```
     pub fn run() -> ! {
         executor().run_internal()
     }
