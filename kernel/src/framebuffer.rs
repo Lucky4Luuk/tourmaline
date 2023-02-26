@@ -260,8 +260,8 @@ impl FbWrapper {
         self.for_pixel_in_range(0,0, self.info.width,self.info.height, f)
     }
 
-    pub fn for_pixel_async<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, f: F) {
-        self.for_pixel_in_range_async(0,0, self.info.width,self.info.height, f)
+    pub async fn for_pixel_async<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, f: F) {
+        self.for_pixel_in_range_async(0,0, self.info.width,self.info.height, f).await
     }
 }
 
