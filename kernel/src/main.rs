@@ -37,6 +37,11 @@ mod task_system;
 mod wasm;
 // mod ring3;
 
+use task_system::{
+    executor::SimpleExecutor,
+    spawner::Spawner,
+};
+
 // const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
@@ -51,6 +56,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 async fn kernel_stage_2() {
     info!("Kernel stage 2 started!");
+
+    let spawner = Spawner::new();
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
@@ -77,8 +84,8 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     heap::init();
     info!("Heap initialized!");
 
-    let spawner = task_system::spawner::Spawner::new();
+    let spawner = Spawner::new();
     spawner.spawn(kernel_stage_2());
 
-    task_system::executor::SimpleExecutor::run()
+    SimpleExecutor::run()
 }

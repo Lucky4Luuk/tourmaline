@@ -1,3 +1,4 @@
+use alloc::string::{String, ToString};
 use log::{Record, Level, Metadata, SetLoggerError, LevelFilter};
 use crate::{framebuffer, util};
 
@@ -36,7 +37,6 @@ impl log::Log for KernelLogger {
             };
             // let size = framebuffer::TextSize::Small;
             let size = framebuffer::TextSize::Normal;
-            let mut buf = [0u8; 4096];
             let mut lock = self.y.lock(); // This lock also synchronizes printing
             let fb = framebuffer::fb_mut();
             if *lock >= fb.height() {
@@ -44,7 +44,7 @@ impl log::Log for KernelLogger {
                 fb.clear();
             }
             let mut area = framebuffer::Rect::new(0, *lock, fb.width(), fb.height());
-            let (width, delta_height) = fb.print(&area, level_color, size, util::show(&mut buf, format_args!("[{}] ", level.as_str())).unwrap_or("FMT FAILED"));
+            let (width, delta_height) = fb.print(&area, level_color, size, &format(format_args!("[{}] ", level.as_str())));
             area.x0 = width;
             area.y0 += delta_height;
             if spacing {
@@ -52,13 +52,23 @@ impl log::Log for KernelLogger {
                 area.x0 = width;
                 area.y0 += delta_height;
             }
-            let (_, delta_height) = fb.print(&area, [255, 255, 255], size, util::show(&mut buf, format_args!("{}\n", record.args())).unwrap_or("FMT FAILED\n"));
+            let (_, delta_height) = fb.print(&area, [255, 255, 255], size, &format(format_args!("{}\n", record.args())));
             area.y0 += delta_height;
             *lock = area.y0;
         }
     }
 
     fn flush(&self) {}
+}
+
+fn format(args: core::fmt::Arguments) -> String {
+    use alloc::format;
+    if crate::heap::is_initialized() {
+        format!("{}", args)
+    } else {
+        let mut buf = [0u8; 2048];
+        util::show(&mut buf, format_args!("{}", args)).expect("Failed to format string!").to_string()
+    }
 }
 
 static LOGGER: KernelLogger = KernelLogger::new();
