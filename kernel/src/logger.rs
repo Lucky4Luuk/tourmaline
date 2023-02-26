@@ -44,7 +44,7 @@ impl log::Log for KernelLogger {
                 fb.clear();
             }
             let mut area = framebuffer::Rect::new(0, *lock, fb.width(), fb.height());
-            let (width, delta_height) = fb.print(&area, level_color, size, &format(format_args!("[{}] ", level.as_str())));
+            let (width, delta_height) = fb.print(&area, level_color, size, format(format_args!("[{}] ", level.as_str())).as_ref());
             area.x0 = width;
             area.y0 += delta_height;
             if spacing {
@@ -52,7 +52,7 @@ impl log::Log for KernelLogger {
                 area.x0 = width;
                 area.y0 += delta_height;
             }
-            let (_, delta_height) = fb.print(&area, [255, 255, 255], size, &format(format_args!("{}\n", record.args())));
+            let (_, delta_height) = fb.print(&area, [255, 255, 255], size, format(format_args!("{}\n", record.args())).as_ref());
             area.y0 += delta_height;
             *lock = area.y0;
         }
@@ -61,13 +61,28 @@ impl log::Log for KernelLogger {
     fn flush(&self) {}
 }
 
-fn format(args: core::fmt::Arguments) -> String {
+enum Formatted<'a> {
+    String(alloc::string::String),
+    Lazy(([u8; 2048], core::fmt::Arguments<'a>))
+}
+
+impl<'a> Formatted<'a> {
+    fn as_ref(&mut self) -> &str {
+        match self {
+            Self::String(value) => &*value,
+            Self::Lazy((buf, args)) => {
+                util::show(buf, format_args!("{}", args)).expect("Failed to format string!")
+            },
+        }
+    }
+}
+
+fn format(args: core::fmt::Arguments) -> Formatted {
     use alloc::format;
     if crate::heap::is_initialized() {
-        format!("{}", args)
+        Formatted::String(format!("{}", args))
     } else {
-        let mut buf = [0u8; 2048];
-        util::show(&mut buf, format_args!("{}", args)).expect("Failed to format string!").to_string()
+        Formatted::Lazy(([0u8; 2048], args))
     }
 }
 

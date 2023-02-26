@@ -4,15 +4,12 @@ use core::task::{Waker, RawWaker, RawWakerVTable, Context, Poll};
 use super::task::Task;
 use super::spawner::Spawner;
 
-use lazy_static::lazy_static;
 use conquer_once::spin::OnceCell;
 use crossbeam_queue::SegQueue;
 
 pub type TaskQueue = SegQueue<Task>;
 
-lazy_static! {
-    static ref TASK_QUEUE: OnceCell<TaskQueue> = OnceCell::uninit();
-}
+static TASK_QUEUE: OnceCell<TaskQueue> = OnceCell::uninit();
 
 fn task_queue() -> &'static TaskQueue {
     TASK_QUEUE.get_or_init(|| TaskQueue::new())
