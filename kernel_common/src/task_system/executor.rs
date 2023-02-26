@@ -5,6 +5,7 @@ use core::task::{Waker, RawWaker, RawWakerVTable, Context, Poll};
 use conquer_once::spin::OnceCell;
 use crossbeam_queue::SegQueue;
 use sync_wrapper::SyncWrapper;
+use futures_task::{waker_ref, ArcWake};
 
 use super::task::ArcTask;
 
@@ -53,8 +54,8 @@ impl SimpleExecutor {
             while let Some(task) = self.task_queue.pop() {
                 let mut future_slot = task.future.lock();
                 if let Some(mut future) = future_slot.take() {
-                    let waker = dummy_waker();
-                    let mut context = Context::from_waker(&waker);
+                    let waker = waker_ref(&task);
+                    let mut context = Context::from_waker(&*waker);
                     match future.as_mut().poll(&mut context) {
                         Poll::Ready(()) => {} // Task done
                         Poll::Pending => {
@@ -67,18 +68,4 @@ impl SimpleExecutor {
             }
         }
     }
-}
-
-fn dummy_raw_waker() -> RawWaker {
-    fn no_op(_: *const ()) {}
-    fn clone(_: *const ()) -> RawWaker {
-        dummy_raw_waker()
-    }
-
-    let vtable = &RawWakerVTable::new(clone, no_op, no_op, no_op);
-    RawWaker::new(0 as *const (), vtable)
-}
-
-fn dummy_waker() -> Waker {
-    unsafe { Waker::from_raw(dummy_raw_waker()) }
 }

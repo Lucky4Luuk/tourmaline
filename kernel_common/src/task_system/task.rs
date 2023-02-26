@@ -13,7 +13,7 @@ use alloc::{
 
 use sync_wrapper::SyncWrapper;
 
-use super::ArcWake;
+use futures_task::ArcWake;
 use super::executor::TaskQueue;
 
 pub type ArcTask = Arc<Task>;
