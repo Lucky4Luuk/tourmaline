@@ -1,3 +1,5 @@
+// TODO: Implement "real" async versions of framebuffer functions
+
 use bootloader_api::{
     BootInfo,
     info::{
@@ -156,6 +158,10 @@ impl FbWrapper {
         }
     }
 
+    pub async fn set_pixel_async(&mut self, x: usize, y: usize, color: [u8; 3]) {
+        self.set_pixel(x,y, color);
+    }
+
     pub fn for_pixel_in_range<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, f: F) {
         let x1 = x1.min(self.width());
         let y1 = y1.min(self.height());
@@ -203,8 +209,59 @@ impl FbWrapper {
         }
     }
 
+    pub async fn for_pixel_in_range_async<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, x0: usize, y0: usize, x1: usize, y1: usize, f: F) {
+        let x1 = x1.min(self.width());
+        let y1 = y1.min(self.height());
+        let w = x1 - x0;
+        let h = y1 - y0;
+        let buf_mut = self.fb.buffer_mut();
+        for x in x0..x1 {
+            for y in y0..y1 {
+                let i = x + y * self.info.stride;
+                let byte_idx = i * self.info.bytes_per_pixel;
+                let next_byte_idx = (i + 1) * self.info.bytes_per_pixel;
+                let raw_pixel = &mut buf_mut[byte_idx..next_byte_idx];
+                let mut pixel: [u8; 3] = [0,0,0];
+                match self.info.pixel_format {
+                    PixelFormat::Rgb => {
+                        pixel[0] = raw_pixel[0];
+                        pixel[1] = raw_pixel[1];
+                        pixel[2] = raw_pixel[2];
+                    },
+                    PixelFormat::Bgr => {
+                        pixel[0] = raw_pixel[2];
+                        pixel[1] = raw_pixel[1];
+                        pixel[2] = raw_pixel[0];
+                    },
+                    PixelFormat::U8 => {
+                        pixel[0] = raw_pixel[0];
+                    },
+                    _ => unimplemented!(),
+                }
+                async { f(x - x0, y - y0, w, h, &mut pixel) }.await;
+                match self.info.pixel_format {
+                    PixelFormat::Rgb => {
+                        raw_pixel[..3].copy_from_slice(&pixel);
+                    },
+                    PixelFormat::Bgr => {
+                        let pixel = [pixel[2], pixel[1], pixel[0]];
+                        raw_pixel[..3].copy_from_slice(&pixel);
+                    },
+                    PixelFormat::U8 => {
+                        raw_pixel[0] = pixel[0];
+                    },
+                    _ => unimplemented!(),
+                }
+            }
+        }
+    }
+
     pub fn for_pixel<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, f: F) {
         self.for_pixel_in_range(0,0, self.info.width,self.info.height, f)
+    }
+
+    pub fn for_pixel_async<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, f: F) {
+        self.for_pixel_in_range_async(0,0, self.info.width,self.info.height, f)
     }
 }
 
