@@ -9,6 +9,7 @@ use core::marker::Sized;
 
 pub mod logger;
 pub mod task_system;
+pub mod wasm;
 
 pub trait StaticRef: Sized + 'static {
     const CONST: &'static Self;
