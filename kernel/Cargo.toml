@@ -13,6 +13,9 @@ panic = "abort"
 # wasm_test = { path = "../wasm_test", artifact = "bin", target = "wasm32-unknown-unknown" }
 
 [dependencies]
+kernel_common = { path = "../kernel_common" }
+kernel_async = { path = "../kernel_async" }
+
 bootloader_api = "0.11"
 x86_64 = "0.14.10"
 raw-cpuid = "10.6.1"
@@ -20,7 +23,6 @@ raw-cpuid = "10.6.1"
 
 spin = { version = "0.9.5", features = ["mutex"] }
 conquer-once = { version = "0.3.2", default-features = false }
-crossbeam-queue = { version = "0.3.8", default-features = false, features = ["alloc"] }
 
 thiserror-no-std = "2.0.2"
 lazy_static = { version = "1.4", features = ["spin_no_std"] }

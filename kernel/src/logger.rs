@@ -1,12 +1,14 @@
-use alloc::string::{String, ToString};
-use log::{Record, Level, Metadata, SetLoggerError, LevelFilter};
+//! A logger implementation for the synchronous part of the kernel.
+//! This simply logs messages to the framebuffer.
+
+use log::{Record, Level, Metadata};
 use crate::{framebuffer, util};
 
-struct KernelLogger {
+pub struct FramebufferLogger {
     y: spin::Mutex<usize>,
 }
 
-impl KernelLogger {
+impl FramebufferLogger {
     pub const fn new() -> Self {
         Self {
             y: spin::Mutex::new(0),
@@ -14,7 +16,7 @@ impl KernelLogger {
     }
 }
 
-impl log::Log for KernelLogger {
+impl log::Log for FramebufferLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         // metadata.level() <= Level::Info
         true
@@ -78,7 +80,6 @@ impl<'a> Formatted<'a> {
 }
 
 fn format(args: core::fmt::Arguments) -> Formatted {
-    use alloc::format;
     if crate::heap::is_initialized() {
         Formatted::String(format!("{}", args))
     } else {
@@ -86,9 +87,4 @@ fn format(args: core::fmt::Arguments) -> Formatted {
     }
 }
 
-static LOGGER: KernelLogger = KernelLogger::new();
-
-pub fn init(level_filter: LevelFilter) -> Result<(), SetLoggerError> {
-    log::set_logger(&LOGGER)
-        .map(|()| log::set_max_level(level_filter))
-}
+pub static LOGGER: FramebufferLogger = FramebufferLogger::new();

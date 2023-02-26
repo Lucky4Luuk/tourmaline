@@ -3,6 +3,7 @@
 #![feature(panic_info_message)]
 #![feature(abi_x86_interrupt)]
 #![feature(alloc_error_handler)]
+#![feature(const_trait_impl)]
 
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate log;
@@ -25,6 +26,11 @@ use x86_64::structures::paging::{Mapper, Size4KiB};
 
 use raw_cpuid::CpuId;
 
+use kernel_common::task_system::{
+    executor::SimpleExecutor,
+    spawner::Spawner,
+};
+
 mod util;
 mod panic_handler;
 mod framebuffer;
@@ -33,14 +39,8 @@ mod gdt;
 mod interrupts;
 mod memory;
 mod heap;
-mod task_system;
 mod wasm;
 // mod ring3;
-
-use task_system::{
-    executor::SimpleExecutor,
-    spawner::Spawner,
-};
 
 // const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
 
@@ -54,17 +54,26 @@ entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-async fn kernel_stage_2() {
+async fn kernel_stage_2_main() {
     info!("Kernel stage 2 started!");
-
-    let spawner = Spawner::new();
+    let pixel_format = match framebuffer::fb_mut().info().pixel_format {
+        bootloader_api::info::PixelFormat::Rgb => kernel_async::framebuffer::PixelFormat::Rgb,
+        bootloader_api::info::PixelFormat::Bgr => kernel_async::framebuffer::PixelFormat::Bgr,
+        bootloader_api::info::PixelFormat::U8 => kernel_async::framebuffer::PixelFormat::U8,
+        _ => panic!("Unsupported pixel format!"),
+    };
+    kernel_async::Kernel::builder()
+        // .with_framebuffer(framebuffer::fb_mut().buffer_mut(), framebuffer::fb_mut().width(), framebuffer::fb_mut().height(), framebuffer::fb_mut().info().stride, framebuffer::fb_mut().info().bytes_per_pixel, pixel_format).await
+        // .with_logger().await
+        .build().await
+        .run().await;
 }
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     framebuffer::init(&mut boot_info.framebuffer);
     framebuffer::fb_mut().set_clear_color([32,32,32]);
     framebuffer::fb_mut().clear();
-    logger::init(log::LevelFilter::max()).unwrap();
+    kernel_common::logger::init(log::LevelFilter::max(), &logger::LOGGER);
     info!("Hello kernel! Version: {}", VERSION);
 
     trace!("fb buffer addr: {:p}", framebuffer::fb_mut().buffer_mut());
@@ -85,7 +94,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     info!("Heap initialized!");
 
     let spawner = Spawner::new();
-    spawner.spawn(kernel_stage_2());
+    spawner.spawn(kernel_stage_2_main());
 
     SimpleExecutor::run()
 }

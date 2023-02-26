@@ -488,8 +488,9 @@ dependencies = [
  "cranelift-entity",
  "cranelift-native",
  "cranelift-wasm",
- "crossbeam-queue",
  "indexmap-nostd",
+ "kernel_async",
+ "kernel_common",
  "lazy_static",
  "linked_list_allocator",
  "log",
@@ -500,6 +501,27 @@ dependencies = [
  "target-lexicon",
  "thiserror-no-std",
  "x86_64",
+]
+
+[[package]]
+name = "kernel_async"
+version = "0.1.0"
+dependencies = [
+ "kernel_common",
+ "log",
+ "noto-sans-mono-bitmap",
+ "spin 0.9.5",
+]
+
+[[package]]
+name = "kernel_common"
+version = "0.1.0"
+dependencies = [
+ "conquer-once",
+ "crossbeam-queue",
+ "log",
+ "spin 0.9.5",
+ "sync_wrapper",
 ]
 
 [[package]]
@@ -812,6 +834,12 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "sync_wrapper"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2047c6ded9c721764247e62cd3b03c09ffc529b2ba5b10ec482ae507a4a70160"
 
 [[package]]
 name = "synstructure"

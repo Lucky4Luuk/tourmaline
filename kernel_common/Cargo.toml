@@ -1,0 +1,13 @@
+[package]
+name = "kernel_common"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+sync_wrapper = "0.1.2"
+spin = { version = "0.9.5", features = ["mutex"] }
+conquer-once = { version = "0.3.2", default-features = false }
+crossbeam-queue = { version = "0.3.8", default-features = false, features = ["alloc"] }
