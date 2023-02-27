@@ -56,7 +56,12 @@ impl SimpleExecutor {
     }
 
     fn run_internal(&self) -> ! {
+        use x86_64::instructions::interrupts;
         loop {
+            interrupts::disable();
+            // TODO: This polls tasks until they are ready
+            //       For a better implementation, see:
+            //       https://os.phil-opp.com/async-await/#executor-with-waker-support
             while let Some(task) = self.task_queue.pop() {
                 let mut future_slot = task.future.lock();
                 if let Some(mut future) = future_slot.take() {
@@ -72,6 +77,8 @@ impl SimpleExecutor {
                     }
                 }
             }
+            // Hlt until an interrupt comes in
+            interrupts::enable_and_hlt();
         }
     }
 }

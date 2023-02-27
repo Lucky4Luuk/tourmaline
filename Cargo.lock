@@ -543,6 +543,7 @@ dependencies = [
  "log",
  "noto-sans-mono-bitmap",
  "spin 0.9.5",
+ "wasm_test",
 ]
 
 [[package]]
@@ -558,6 +559,7 @@ dependencies = [
  "spin 0.9.5",
  "sync_wrapper",
  "wasmi",
+ "x86_64",
 ]
 
 [[package]]
@@ -1008,6 +1010,7 @@ dependencies = [
  "bootloader",
  "kernel",
  "ovmf-prebuilt",
+ "wasm_test",
 ]
 
 [[package]]
@@ -1114,6 +1117,10 @@ name = "wasm-bindgen-shared"
 version = "0.2.84"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0046fef7e28c3804e5e38bfa31ea2a0f73905319b677e57ebe37e49358989b5d"
+
+[[package]]
+name = "wasm_test"
+version = "0.1.0"
 
 [[package]]
 name = "wasmi"

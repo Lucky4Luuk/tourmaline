@@ -42,8 +42,6 @@ mod heap;
 mod wasm;
 // mod ring3;
 
-// const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
-
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
     config.mappings.physical_memory = Some(Mapping::Dynamic);

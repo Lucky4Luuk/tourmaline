@@ -3,7 +3,8 @@ name = "kernel_async"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[build-dependencies]
+wasm_test = { path = "../wasm_test", artifact = "cdylib", target = "wasm32-unknown-unknown" }
 
 [dependencies]
 kernel_common = { path = "../kernel_common" }

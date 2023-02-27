@@ -10,6 +10,8 @@ use kernel_common::task_system::spawner::Spawner;
 pub mod framebuffer;
 mod logger;
 
+const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
+
 pub struct KernelBuilder {
     fb_init: bool,
     log_init: bool,
@@ -53,10 +55,26 @@ impl Kernel {
 
     pub async fn run(self) {
         // self.task_spawner.spawn_async(log_printer()).await;
+        self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
         for i in 0..10 {
             self.task_spawner.spawn_async(test(i)).await;
         }
     }
+}
+
+struct Abi {
+
+}
+
+impl kernel_common::wasm::abi::Abi for Abi {
+    fn int3(&self) { trace!("int3!!!"); }
+}
+
+static ABI: Abi = Abi {};
+
+async fn run_wasm(data: &[u8]) {
+    let mut wasm_program = kernel_common::wasm::WasmProgram::new(data, &ABI);
+    wasm_program.run().await;
 }
 
 async fn test(i: usize) {

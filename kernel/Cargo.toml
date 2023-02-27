@@ -9,9 +9,6 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 
-# [build-dependencies]
-# wasm_test = { path = "../wasm_test", artifact = "bin", target = "wasm32-unknown-unknown" }
-
 [dependencies]
 kernel_common = { path = "../kernel_common" }
 kernel_async = { path = "../kernel_async" }
