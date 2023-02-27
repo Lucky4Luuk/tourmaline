@@ -82,10 +82,16 @@ impl ModuleBuilder {
     }
 
     pub fn with_abi(mut self, abi: &'static impl super::abi::Abi) -> Self {
-        let func = Func::wrap(&mut self.store, |caller: Caller<'_, ()>| abi.yield_to_kernel());
+        let func = Func::wrap(&mut self.store, |_caller: Caller<'_, ()>| abi.yield_to_kernel());
         self = self.with_func("env", "yield_to_kernel", func);
-        let func = Func::wrap(&mut self.store, |caller: Caller<'_, ()>| abi.int3());
+        let func = Func::wrap(&mut self.store, |_caller: Caller<'_, ()>| abi.int3());
         self = self.with_func("env", "int3", func);
+        let func = Func::wrap(&mut self.store, |mut caller: Caller<'_, ()>, data_ptr: i32, data_len: u32| {
+            let memory = caller.get_export("memory").map(|export| export.into_memory()).flatten().unwrap();
+            let bytes: &[u8] = &memory.data_mut(&mut caller)[data_ptr as usize .. (data_ptr as usize + data_len as usize)];
+            abi.log(bytes)
+        });
+        self = self.with_func("env", "kernel_log", func);
         self
     }
 }

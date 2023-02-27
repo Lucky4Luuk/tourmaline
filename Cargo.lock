@@ -1014,6 +1014,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "tourmaline_std"
+version = "0.1.0"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1121,6 +1125,9 @@ checksum = "0046fef7e28c3804e5e38bfa31ea2a0f73905319b677e57ebe37e49358989b5d"
 [[package]]
 name = "wasm_test"
 version = "0.1.0"
+dependencies = [
+ "tourmaline_std",
+]
 
 [[package]]
 name = "wasmi"

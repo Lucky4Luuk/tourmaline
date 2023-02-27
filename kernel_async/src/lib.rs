@@ -68,6 +68,10 @@ struct Abi {
 
 impl kernel_common::wasm::abi::Abi for Abi {
     fn int3(&self) { trace!("int3!!!"); }
+
+    fn log(&self, data: &[u8]) {
+        trace!("[WASM] {}", core::str::from_utf8(data).unwrap());
+    }
 }
 
 static ABI: Abi = Abi {};
