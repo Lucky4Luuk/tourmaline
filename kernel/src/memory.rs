@@ -106,6 +106,12 @@ use x86_64::structures::paging::mapper::MapToError;
 use x86_64::structures::paging::Mapper;
 use x86_64::structures::paging::PageTableFlags;
 
+pub fn unmap_page(page: Page) {
+    let (_frame, flush) = memory_mapper().unmap(page).unwrap();
+    // TODO: Unmap frame using FrameDeallocator trait
+    flush.flush();
+}
+
 /// Maps a page to a physical frame. Currently marked as unsafe, because I'm unsure of its safety.
 /// It shouldn't remap in-use frames, but if it happens, please let me know in a Github issue.
 pub unsafe fn map_page(page: Page, extra_flags: Option<PageTableFlags>) -> Result<(), MapToError<Size4KiB>> {

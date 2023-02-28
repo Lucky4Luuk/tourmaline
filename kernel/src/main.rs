@@ -8,6 +8,8 @@
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate log;
 #[macro_use] extern crate target_lexicon;
+/// To avoid import collisions with our acpi module, we import it specifically as acpi_crate
+extern crate acpi as acpi_crate;
 
 use core::arch::asm;
 
@@ -39,7 +41,9 @@ mod gdt;
 mod interrupts;
 mod memory;
 mod heap;
-mod wasm;
+mod acpi;
+mod apic;
+// mod wasm;
 // mod ring3;
 
 pub static BOOTLOADER_CONFIG: BootloaderConfig = {
@@ -91,8 +95,21 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     heap::init();
     info!("Heap initialized!");
 
-    let spawner = Spawner::new();
-    spawner.spawn(kernel_stage_2_main());
+    let rsdp_addr = boot_info.rsdp_addr.into_option().unwrap();
+    let acpi_tables = acpi::load_acpi(rsdp_addr);
+    if let acpi_crate::InterruptModel::Apic(apic) = acpi_tables.platform_info().unwrap().interrupt_model {
+        apic::init(apic.local_apic_address);
+    } else {
+        panic!("Unsupported interrupt model! Only APIC is currently supported.");
+    }
 
-    SimpleExecutor::run()
+    x86_64::instructions::interrupts::enable_and_hlt();
+    loop {
+        x86_64::instructions::hlt();
+    }
+
+    // let spawner = Spawner::new();
+    // spawner.spawn(kernel_stage_2_main());
+    //
+    // SimpleExecutor::run()
 }

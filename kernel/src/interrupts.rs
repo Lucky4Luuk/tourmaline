@@ -2,6 +2,20 @@ use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, Pag
 
 use lazy_static::lazy_static;
 
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum LApicInterrupts {
+    TimerIndex = 32,
+    ErrorIndex,
+    SpuriousIndex,
+}
+
+impl LApicInterrupts {
+    pub fn as_usize(&self) -> usize {
+        *self as usize
+    }
+}
+
 lazy_static! {
     pub static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
@@ -12,8 +26,17 @@ lazy_static! {
         idt.page_fault.set_handler_fn(page_fault_handler);
         idt.general_protection_fault.set_handler_fn(general_protection_fault_handler);
         idt.stack_segment_fault.set_handler_fn(stack_segment_fault_handler);
+
+        // LAPIC interrupts
+        idt[LApicInterrupts::TimerIndex.as_usize()].set_handler_fn(timer_handler);
+
         idt
     };
+}
+
+extern "x86-interrupt" fn timer_handler(stack_frame: InterruptStackFrame) {
+    // trace!("TIMER");
+    crate::apic::end_of_interrupt();
 }
 
 pub fn init_idt() {

@@ -1,11 +1,10 @@
-use alloc::collections::VecDeque;
 use alloc::sync::Arc;
-use core::task::{Waker, RawWaker, RawWakerVTable, Context, Poll};
+use core::task::{Context, Poll};
 
 use conquer_once::spin::OnceCell;
 use crossbeam_queue::SegQueue;
 use sync_wrapper::SyncWrapper;
-use futures_task::{waker_ref, ArcWake};
+use futures_task::waker_ref;
 
 use super::task::ArcTask;
 

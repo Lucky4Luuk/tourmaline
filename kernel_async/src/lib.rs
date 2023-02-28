@@ -4,11 +4,14 @@
 
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate log;
+#[macro_use] extern crate async_trait;
 
 use kernel_common::task_system::spawner::Spawner;
 
 pub mod framebuffer;
 mod logger;
+mod abi_impl;
+mod services;
 
 const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
 
@@ -53,6 +56,10 @@ impl Kernel {
         KernelBuilder::new()
     }
 
+    fn async_spawn_service(&self) {
+
+    }
+
     pub async fn run(self) {
         // self.task_spawner.spawn_async(log_printer()).await;
         self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
@@ -62,30 +69,8 @@ impl Kernel {
     }
 }
 
-fn strip_trailing_newline(input: &str) -> &str {
-    input
-        .strip_suffix("\r\n")
-        .or(input.strip_suffix("\n"))
-        .unwrap_or(input)
-}
-
-struct Abi {
-
-}
-
-impl kernel_common::wasm::abi::Abi for Abi {
-    fn int3(&self) { trace!("int3!!!"); }
-
-    fn sys_log(&self, data: &[u8]) {
-        let msg = core::str::from_utf8(data).unwrap();
-        trace!("[WASM] {}", strip_trailing_newline(msg));
-    }
-}
-
-static ABI: Abi = Abi {};
-
 async fn run_wasm(data: &[u8]) {
-    let mut wasm_program = kernel_common::wasm::WasmProgram::new(data, &ABI);
+    let mut wasm_program = kernel_common::wasm::WasmProgram::new(data, &abi_impl::ABI);
     wasm_program.run().await;
 }
 

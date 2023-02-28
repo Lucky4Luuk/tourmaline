@@ -11,8 +11,6 @@ use alloc::{
     sync::Arc,
 };
 
-use sync_wrapper::SyncWrapper;
-
 use futures_task::ArcWake;
 use super::executor::TaskQueue;
 

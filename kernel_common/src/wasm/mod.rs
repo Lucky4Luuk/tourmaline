@@ -1,5 +1,6 @@
 mod backend;
 pub mod abi;
+pub mod async_bridge;
 
 use backend::{WasmModule, ModuleBuilder};
 
@@ -8,7 +9,7 @@ pub struct WasmProgram {
 }
 
 impl WasmProgram {
-    pub fn new(data: &[u8], abi: &'static impl abi::Abi) -> Self {
+    pub fn new(data: &[u8], abi: &'static impl abi::AbiFuncIter) -> Self {
         ModuleBuilder::from_wasm_bytes(data).expect("Failed to create module builder!")
             .with_abi(abi)
             .build()

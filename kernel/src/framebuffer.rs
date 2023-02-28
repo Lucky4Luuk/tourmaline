@@ -87,32 +87,38 @@ impl FbWrapper {
         let mut delta_height = 0;
 
         for c in text.chars() {
-            if c == '\n' {
-                x = area.x0;
-                y += size_num;
-                delta_height += size_num;
-                continue;
-            }
-            let width = get_raster_width(FontWeight::Regular, size);
+            match c {
+                '\n' => {
+                    x = area.x0;
+                    y += size_num;
+                    delta_height += size_num;
+                },
+                '\t' => {
+                    x += get_raster_width(FontWeight::Regular, size) * 4;
+                },
+                _ => {
+                    let width = get_raster_width(FontWeight::Regular, size);
 
-            if x + width > area.x1 {
-                x = area.x0;
-                y += size_num;
-                delta_height += size_num;
-            }
+                    if x + width > area.x1 {
+                        x = area.x0;
+                        y += size_num;
+                        delta_height += size_num;
+                    }
 
-            let char_raster = get_raster(c, FontWeight::Regular, size).expect("unsupported char");
-            let raster = char_raster.raster();
+                    let char_raster = get_raster(c, FontWeight::Regular, size).expect("unsupported char");
+                    let raster = char_raster.raster();
 
-            self.for_pixel_in_range(x, y, x + width, y + char_raster.height(), |x,y,w,h, pixel| {
-                let byte = raster[y][x];
-                let effect = 1.0 - (byte as f32 / 255f32);
-                for i in 0..3 {
-                    pixel[i] = (pixel[i] as f32 * effect) as u8 + (color[i] as f32 * (1.0 - effect)) as u8;
+                    self.for_pixel_in_range(x, y, x + width, y + char_raster.height(), |x,y,w,h, pixel| {
+                        let byte = raster[y][x];
+                        let effect = 1.0 - (byte as f32 / 255f32);
+                        for i in 0..3 {
+                            pixel[i] = (pixel[i] as f32 * effect) as u8 + (color[i] as f32 * (1.0 - effect)) as u8;
+                        }
+                    });
+
+                    x += width;
                 }
-            });
-
-            x += width;
+            }
         }
 
         (x, delta_height)

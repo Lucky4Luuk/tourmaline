@@ -1,7 +1,10 @@
 use alloc::vec::Vec;
+use alloc::boxed::Box;
 use alloc::string::String;
 use wasmi::core::{HostError, Trap};
 use wasmi::{Store, Func, Caller, IntoFunc};
+
+use super::async_bridge::AbiAsyncBridge;
 
 pub type Handle = u32;
 
@@ -17,6 +20,7 @@ pub trait Abi: Send + Sync {
     // Handle related functions
     fn handle_close(&self, _handle: Handle) { todo!("handle_close"); }
     fn handle_write(&self, _handle: Handle, _data: &[u8]) { todo!("handle_write"); }
+    fn handle_read(&self, _handle: Handle, _data_ptr: i32, _data_len: u32) { todo!("handle_read"); }
 }
 
 pub struct AbiFunc {

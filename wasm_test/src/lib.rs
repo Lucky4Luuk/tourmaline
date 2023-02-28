@@ -4,9 +4,11 @@ use tourmaline_std::{*, abi::*};
 
 #[no_mangle]
 pub extern fn start() {
+    io::init_stdout();
     for i in 0..10 {
         // abi_int3();
-        println!("number: {}", i);
+        // println!("number: {}", i);
+        kernel_log("logg!!!");
         // TODO: This should not have to be inserted by hand
         //       The wasm backend in the kernel should insert these automatically
         //       or call this based on gas-fees or whatever works!
