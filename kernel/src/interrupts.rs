@@ -34,7 +34,7 @@ lazy_static! {
     };
 }
 
-extern "x86-interrupt" fn timer_handler(stack_frame: InterruptStackFrame) {
+extern "x86-interrupt" fn timer_handler(_stack_frame: InterruptStackFrame) {
     // trace!("TIMER");
     crate::apic::end_of_interrupt();
 }

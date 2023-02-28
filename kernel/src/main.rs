@@ -103,13 +103,8 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
         panic!("Unsupported interrupt model! Only APIC is currently supported.");
     }
 
-    x86_64::instructions::interrupts::enable_and_hlt();
-    loop {
-        x86_64::instructions::hlt();
-    }
+    let spawner = Spawner::new();
+    spawner.spawn(kernel_stage_2_main());
 
-    // let spawner = Spawner::new();
-    // spawner.spawn(kernel_stage_2_main());
-    //
-    // SimpleExecutor::run()
+    SimpleExecutor::run()
 }
