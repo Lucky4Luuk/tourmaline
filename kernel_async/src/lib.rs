@@ -62,6 +62,13 @@ impl Kernel {
     }
 }
 
+fn strip_trailing_newline(input: &str) -> &str {
+    input
+        .strip_suffix("\r\n")
+        .or(input.strip_suffix("\n"))
+        .unwrap_or(input)
+}
+
 struct Abi {
 
 }
@@ -69,8 +76,9 @@ struct Abi {
 impl kernel_common::wasm::abi::Abi for Abi {
     fn int3(&self) { trace!("int3!!!"); }
 
-    fn log(&self, data: &[u8]) {
-        trace!("[WASM] {}", core::str::from_utf8(data).unwrap());
+    fn sys_log(&self, data: &[u8]) {
+        let msg = core::str::from_utf8(data).unwrap();
+        trace!("[WASM] {}", strip_trailing_newline(msg));
     }
 }
 
