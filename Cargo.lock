@@ -179,6 +179,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmos-rtc"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e5836e6e08dfd8203d2197c17f7c3a050a03012d0a192a4cbbf724aa9f7ec80"
+dependencies = [
+ "x86_64",
+]
+
+[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -584,7 +593,7 @@ name = "kernel_common"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-trait",
+ "cmos-rtc",
  "conquer-once",
  "crossbeam-queue",
  "futures-task",

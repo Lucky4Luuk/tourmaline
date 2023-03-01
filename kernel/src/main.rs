@@ -4,14 +4,13 @@
 #![feature(abi_x86_interrupt)]
 #![feature(alloc_error_handler)]
 #![feature(const_trait_impl)]
+#![feature(asm_const)]
 
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate log;
 #[macro_use] extern crate target_lexicon;
 /// To avoid import collisions with our acpi module, we import it specifically as acpi_crate
 extern crate acpi as acpi_crate;
-
-use core::arch::asm;
 
 use bootloader_api::{
     entry_point,
@@ -22,9 +21,7 @@ use bootloader_api::{
     },
 };
 
-use x86_64::{VirtAddr, PhysAddr};
-use x86_64::structures::paging::{Page, PageTableFlags};
-use x86_64::structures::paging::{Mapper, Size4KiB};
+use x86_64::VirtAddr;
 
 use raw_cpuid::CpuId;
 
@@ -97,7 +94,9 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
     let rsdp_addr = boot_info.rsdp_addr.into_option().unwrap();
     let acpi_tables = acpi::load_acpi(rsdp_addr);
-    if let acpi_crate::InterruptModel::Apic(apic) = acpi_tables.platform_info().unwrap().interrupt_model {
+    let platform_info = acpi_tables.platform_info().expect("Failed to read platform info!");
+    debug!("Processors found: {}", platform_info.processor_info.as_ref().map(|pi| pi.application_processors.len() + 1).unwrap_or(1));
+    if let acpi_crate::InterruptModel::Apic(apic) = &platform_info.interrupt_model {
         apic::init(apic.local_apic_address);
     } else {
         panic!("Unsupported interrupt model! Only APIC is currently supported.");

@@ -8,6 +8,7 @@ fn main() {
 
     println!("Launching qemu...");
     let mut cmd = std::process::Command::new("qemu-system-x86_64");
+    cmd.arg("-smp").arg("4");
     if uefi {
         cmd.arg("-bios").arg(ovmf_prebuilt::ovmf_pure_efi());
         cmd.arg("-drive").arg(format!("format=raw,file={uefi_path}"));

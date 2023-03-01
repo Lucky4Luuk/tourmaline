@@ -29,6 +29,8 @@ lazy_static! {
 
         // LAPIC interrupts
         idt[LApicInterrupts::TimerIndex.as_usize()].set_handler_fn(timer_handler);
+        idt[LApicInterrupts::ErrorIndex.as_usize()].set_handler_fn(lapic_error_handler);
+        idt[LApicInterrupts::SpuriousIndex.as_usize()].set_handler_fn(lapic_spurious_handler);
 
         idt
     };
@@ -36,6 +38,16 @@ lazy_static! {
 
 extern "x86-interrupt" fn timer_handler(_stack_frame: InterruptStackFrame) {
     // trace!("TIMER");
+    crate::apic::end_of_interrupt();
+}
+
+extern "x86-interrupt" fn lapic_error_handler(_stack_frame: InterruptStackFrame) {
+    error!("LAPIC ERROR");
+    crate::apic::end_of_interrupt();
+}
+
+extern "x86-interrupt" fn lapic_spurious_handler(_stack_frame: InterruptStackFrame) {
+    trace!("LAPIC SPURIOUS");
     crate::apic::end_of_interrupt();
 }
 
