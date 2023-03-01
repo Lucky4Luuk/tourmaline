@@ -6,7 +6,7 @@ use x86_64::{
         frame::PhysFrame,
     }
 };
-use x2apic::lapic::{LocalApic, LocalApicBuilder, TimerMode};
+use x2apic::lapic::{LocalApic, LocalApicBuilder};
 use crate::interrupts::LApicInterrupts;
 
 static mut LAPIC: Option<LocalApic> = None;
