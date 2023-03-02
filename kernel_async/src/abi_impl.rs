@@ -8,32 +8,6 @@ fn strip_trailing_newline(input: &str) -> &str {
         .unwrap_or(input)
 }
 
-pub enum HandleType {
-    Null,
-    Stdout,
-}
-
-pub struct AbiHandleMap {
-    next_handle_id: u32,
-    handle_map: hashbrown::HashMap<Handle, HandleType>,
-}
-
-impl AbiHandleMap {
-    pub fn new() -> Self {
-        Self {
-            next_handle_id: 1,
-            handle_map: hashbrown::HashMap::new(),
-        }
-    }
-
-    pub fn stdout(&mut self) -> Handle {
-        let handle = self.next_handle_id;
-        self.next_handle_id.checked_add(1).expect("Ran out of handle ids!");
-        self.handle_map.insert(handle, HandleType::Stdout);
-        handle
-    }
-}
-
 pub struct Abi;
 
 impl Abi {

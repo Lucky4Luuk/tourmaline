@@ -6,6 +6,15 @@ use wasmi::{Store, Func, Caller, IntoFunc};
 
 use super::async_bridge::AbiAsyncBridge;
 
+static ABI_LOCK: spin::Mutex<()> = spin::Mutex::new(());
+
+fn with_lock<T, F: FnOnce() -> T>(f: F) -> T {
+    let lock = ABI_LOCK.lock();
+    let res = f();
+    drop(lock);
+    res
+}
+
 pub type Handle = u32;
 
 pub trait Abi: Send + Sync {
@@ -40,14 +49,14 @@ impl AbiFunc {
 pub trait AbiFuncIter: Abi {
     fn functions(&'static self, store: &mut Store<()>) -> Vec<AbiFunc> {
         vec![
-            AbiFunc::wrap("yield_to_kernel", store, |_caller: Caller<'_, ()>| self.yield_to_kernel()),
-            AbiFunc::wrap("int3", store, |_caller: Caller<'_, ()>| self.int3()),
+            AbiFunc::wrap("yield_to_kernel", store, |_caller: Caller<'_, ()>| with_lock(|| self.yield_to_kernel())),
+            AbiFunc::wrap("int3", store, |_caller: Caller<'_, ()>| with_lock(|| self.int3())),
 
-            AbiFunc::wrap("sys_log", store, |mut caller: Caller<'_, ()>, data_ptr: i32, data_len: u32| {
+            AbiFunc::wrap("sys_log", store, |mut caller: Caller<'_, ()>, data_ptr: i32, data_len: u32| with_lock(|| {
                 let memory = caller.get_export("memory").map(|export| export.into_memory()).flatten().unwrap();
                 let bytes: &[u8] = &memory.data_mut(&mut caller)[data_ptr as usize .. (data_ptr as usize + data_len as usize)];
                 self.sys_log(bytes);
-            }),
+            })),
 
             AbiFunc::wrap("stdout", store, |_caller: Caller<'_, ()>| self.stdout()),
 

@@ -18,7 +18,6 @@ pub struct SimpleExecutor {
 impl SimpleExecutor {
     pub fn new() -> SimpleExecutor {
         let task_queue = Arc::new(SegQueue::new());
-        info!("Kernel executor initialized!");
         SimpleExecutor {
             task_queue,
         }

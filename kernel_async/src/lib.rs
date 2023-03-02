@@ -17,14 +17,16 @@ const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
 
 pub struct KernelBuilder {
     spawner: Spawner,
+    processor_id: usize,
     fb_init: bool,
     log_init: bool,
 }
 
 impl KernelBuilder {
-    pub fn new(spawner: Spawner) -> Self {
+    pub fn new(spawner: Spawner, processor_id: usize) -> Self {
         Self {
-            spawner: spawner,
+            spawner,
+            processor_id,
             fb_init: false,
             log_init: false,
         }
@@ -45,17 +47,19 @@ impl KernelBuilder {
     pub async fn build(self) -> Kernel {
         Kernel {
             task_spawner: self.spawner,
+            processor_id: self.processor_id,
         }
     }
 }
 
 pub struct Kernel {
     task_spawner: Spawner,
+    processor_id: usize,
 }
 
 impl Kernel {
-    pub fn builder(spawner: Spawner) -> KernelBuilder {
-        KernelBuilder::new(spawner)
+    pub fn builder(spawner: Spawner, processor_id: usize) -> KernelBuilder {
+        KernelBuilder::new(spawner, processor_id)
     }
 
     fn async_spawn_service(&self) {
@@ -64,10 +68,10 @@ impl Kernel {
 
     pub async fn run(self) {
         // self.task_spawner.spawn_async(log_printer()).await;
-        self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
-        for i in 0..10 {
-            self.task_spawner.spawn_async(test(i)).await;
-        }
+        // self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
+        // for i in 0..10 {
+        //     self.task_spawner.spawn_async(test(self.processor_id, i)).await;
+        // }
     }
 }
 
@@ -76,9 +80,9 @@ async fn run_wasm(data: &[u8]) {
     wasm_program.run().await;
 }
 
-async fn test(i: usize) {
+async fn test(id: usize, i: usize) {
     if i % 2 == 0 { kernel_common::task_system::task::yield_now().await; }
-    debug!("i: {}", i);
+    debug!("[{id}] i: {i}");
 }
 
 async fn log_printer() {

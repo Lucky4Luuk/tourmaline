@@ -5,7 +5,7 @@ use tourmaline_std::{*, abi::*};
 #[no_mangle]
 pub extern fn start() {
     io::init_stdout();
-    for i in 0..10 {
+    for i in 0..2 {
         // abi_int3();
         // println!("number: {}", i);
         kernel_log("logg!!!");

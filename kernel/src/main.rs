@@ -6,6 +6,8 @@
 #![feature(alloc_error_handler)]
 #![feature(const_trait_impl)]
 #![feature(asm_const)]
+#![feature(const_slice_from_raw_parts_mut)]
+#![feature(const_mut_refs)]
 
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate log;
@@ -56,15 +58,6 @@ pub extern "C" fn _start() -> ! {
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-async fn kernel_stage_2_main(spawner: Spawner) {
-    info!("Kernel stage 2 started!");
-    kernel_async::Kernel::builder(spawner)
-        // .with_framebuffer(framebuffer::fb_mut().buffer_mut(), framebuffer::fb_mut().width(), framebuffer::fb_mut().height(), framebuffer::fb_mut().info().stride, framebuffer::fb_mut().info().bytes_per_pixel, framebuffer::fb_mut().info().pixel_format).await
-        // .with_logger().await
-        .build().await
-        .run().await;
-}
-
 fn kernel_main(boot_info: &LimineBootInfoResponse) -> ! {
     framebuffer::init();
     framebuffer::fb_mut().set_clear_color([32,32,32]);
@@ -109,12 +102,11 @@ fn kernel_main(boot_info: &LimineBootInfoResponse) -> ! {
     if let Some(smp_response) = SMP_REQUEST.get_response().get_mut() {
         info!("SMP cpus: {}", smp_response.cpus().len());
         let mut main_cpu_info = None;
-        for cpu in smp_response.cpus() {
+        for (i, cpu) in smp_response.cpus().iter_mut().enumerate() {
+            cpu.extra_argument = i as u64;
             if cpu.processor_id != bsp_processor_id {
-                cpu.extra_argument = 0;
                 cpu.goto_address = smp_main;
             } else {
-                cpu.extra_argument = 1;
                 main_cpu_info = Some(cpu);
             }
         }
@@ -122,19 +114,28 @@ fn kernel_main(boot_info: &LimineBootInfoResponse) -> ! {
     } else {
         panic!("SMP could not be enabled!");
     }
-
-    // let executor = SimpleExecutor::new();
-    //
-    // let spawner = Spawner::new();
-    // spawner.spawn(kernel_stage_2_main());
-    //
-    // executor::run()
 }
 
 #[no_mangle]
 extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
     let info: &'static LimineSmpInfo = unsafe { info.as_ref().unwrap() };
-    let is_bsp = info.extra_argument == 1;
-    info!("Hello from cpu {}! {}", info.processor_id, if is_bsp { "I'm the BSP!" } else { "" });
+    let processor_id = info.extra_argument as usize;
+    info!("Hello from cpu {}!", processor_id);
+
+    if info.processor_id < 4 {
+        let executor = SimpleExecutor::new();
+        let spawner = executor.spawner();
+        spawner.spawn(kernel_stage_2_main(spawner.clone(), processor_id));
+        executor.run();
+    }
+
     hlt_loop();
+}
+
+async fn kernel_stage_2_main(spawner: Spawner, processor_id: usize) {
+    kernel_async::Kernel::builder(spawner, processor_id)
+        // .with_framebuffer(framebuffer::fb_mut().buffer_mut(), framebuffer::fb_mut().width(), framebuffer::fb_mut().height(), framebuffer::fb_mut().info().stride, framebuffer::fb_mut().info().bytes_per_pixel, framebuffer::fb_mut().info().pixel_format).await
+        // .with_logger().await
+        .build().await
+        .run().await;
 }

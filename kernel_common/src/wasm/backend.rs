@@ -19,7 +19,7 @@ impl WasmModule {
 
         let entry_point = self.instance.get_typed_func::<(), ()>(&self.store, "start").expect("Failed to get `main` function!");
 
-        let values: Vec<Value> = Vec::new();
+        let values: [Value; 0] = [];
         let mut call_result = entry_point.call_resumable(&mut self.store, ()).map_err(|e| wasmi::Error::from(e));
         loop {
             if call_result.is_err() {

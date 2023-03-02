@@ -12,7 +12,7 @@ fn panic(info: &PanicInfo) -> ! {
 
     let mut buf = [0u8; 4096];
 
-    let fb = framebuffer::fb_mut();
+    let mut fb = framebuffer::fb_mut();
     let width = fb.width();
     let height = fb.height();
     fb.set_clear_color(bg_col);

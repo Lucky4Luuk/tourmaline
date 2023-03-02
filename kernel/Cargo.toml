@@ -21,7 +21,8 @@ hashbrown = "0.13.2"
 thiserror-no-std = "2.0.2"
 lazy_static = { version = "1.4", features = ["spin_no_std"] }
 # slab_allocator_rs = "1.0.2"
-linked_list_allocator = "0.10.4"
+# linked_list_allocator = "0.10.4"
+good_memory_allocator = "0.1.7"
 
 log = "0.4"
 noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_16", "size_20", "size_32"] }

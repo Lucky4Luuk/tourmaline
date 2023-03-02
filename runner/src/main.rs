@@ -16,6 +16,12 @@ fn main() {
     println!("Success! Calling `cargo run --release` on the kernel package now...");
 
     Command::new("cargo")
+        .current_dir("../wasm_test")
+        .arg("build")
+        .arg("--release")
+        .spawn().unwrap().wait().unwrap();
+
+    Command::new("cargo")
         .current_dir("../kernel")
         .arg("run")
         .arg("--release")

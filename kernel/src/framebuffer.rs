@@ -1,14 +1,16 @@
 use limine::*;
+use spin::{Mutex, MutexGuard};
 use kernel_common::framebuffer::PixelFormat;
 
-pub static mut FRAMEBUFFER: Option<FbWrapper> = None;
+pub static FRAMEBUFFER: Mutex<FbWrapper> = Mutex::new(FbWrapper::uninit());
 static FRAMEBUFFER_REQUEST: LimineFramebufferRequest = LimineFramebufferRequest::new(0);
 
 pub fn init() {
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response().get() {
         let framebuffer = &framebuffer_response.framebuffers()[0];
         unsafe {
-            FRAMEBUFFER = Some(FbWrapper::new(&framebuffer));
+            let mut lock = FRAMEBUFFER.lock();
+            *lock = FbWrapper::new(&framebuffer);
         }
     } else {
         panic!("Failed to initialize framebuffer!");
@@ -16,10 +18,8 @@ pub fn init() {
 }
 
 #[inline]
-pub fn fb_mut() -> &'static mut FbWrapper {
-    unsafe {
-        FRAMEBUFFER.as_mut().unwrap()
-    }
+pub fn fb_mut() -> MutexGuard<'static, FbWrapper> {
+    FRAMEBUFFER.lock()
 }
 
 pub struct Rect {
@@ -63,6 +63,20 @@ pub struct FbWrapper {
 }
 
 impl FbWrapper {
+    const fn uninit() -> Self {
+        Self {
+            fb: unsafe { core::slice::from_raw_parts_mut(core::ptr::NonNull::dangling().as_ptr(), 0) },
+            info: FramebufferInfo {
+                width: 0,
+                height: 0,
+                stride: 0,
+                bytes_per_pixel: 0,
+                pixel_format: PixelFormat::U8,
+            },
+            clear_color: [0; 3],
+        }
+    }
+
     fn new(fb: &LimineFramebuffer) -> Self {
         let rgb_or_bgr = if fb.memory_model == 1 { PixelFormat::Rgb } else { PixelFormat::Bgr };
         // fb.bpp is bits per pixel

@@ -2,6 +2,11 @@
 
 #[macro_use] extern crate alloc;
 
+use lol_alloc::{FreeListAllocator, LockedAllocator};
+
+#[global_allocator]
+static ALLOCATOR: LockedAllocator<FreeListAllocator> = LockedAllocator::new(FreeListAllocator::new());
+
 // Expose the raw ABI
 pub mod abi;
 
