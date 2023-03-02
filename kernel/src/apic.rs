@@ -11,9 +11,10 @@ use crate::interrupts::LApicInterrupts;
 
 static mut LAPIC: Option<LocalApic> = None;
 
-pub fn init(apic_virtual_address: u64) {
-    let page = Page::containing_address(VirtAddr::new(apic_virtual_address));
-    let frame = PhysFrame::containing_address(PhysAddr::new(apic_virtual_address));
+pub fn init(apic_phys_address: u64) {
+    let addr = apic_phys_address + crate::memory::hhdm_offset();
+    let page = Page::containing_address(VirtAddr::new_truncate(addr));
+    let frame = PhysFrame::containing_address(PhysAddr::new_truncate(addr));
     unsafe {
         crate::memory::map_page_to_frame(page, frame, None).unwrap();
     }
@@ -22,7 +23,7 @@ pub fn init(apic_virtual_address: u64) {
         .timer_vector(LApicInterrupts::TimerIndex as usize)
         .error_vector(LApicInterrupts::ErrorIndex as usize)
         .spurious_vector(LApicInterrupts::SpuriousIndex as usize)
-        .set_xapic_base(apic_virtual_address)
+        .set_xapic_base(addr)
         .build()
         .unwrap_or_else(|err| panic!("{}", err));
 

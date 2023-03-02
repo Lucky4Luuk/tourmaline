@@ -8,10 +8,13 @@ static mut FRAME_ALLOCATOR: Option<BootInfoFrameAllocator> = None;
 static HHDM_REQUEST: LimineHhdmRequest = LimineHhdmRequest::new(0);
 static MEMMAP_REQUEST: LimineMemmapRequest = LimineMemmapRequest::new(0);
 
+static mut HHDM_OFFSET: u64 = 0;
+
 pub fn init() {
     if let Some(hhdm_response) = HHDM_REQUEST.get_response().get() {
         if let Some(memmap_response) = MEMMAP_REQUEST.get_response().get() {
-            let mut memory_mapper = unsafe { init_mapper(VirtAddr::new(hhdm_response.offset)) };
+            unsafe { HHDM_OFFSET = hhdm_response.offset; }
+            let mut memory_mapper = unsafe { init_mapper(VirtAddr::new(HHDM_OFFSET)) };
             let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(memmap_response) };
             unsafe {
                 MEMORY_MAPPER = Some(memory_mapper);
@@ -23,6 +26,10 @@ pub fn init() {
     } else {
         panic!("Failed to get HHDM information!");
     }
+}
+
+pub fn hhdm_offset() -> u64 {
+    unsafe { HHDM_OFFSET }
 }
 
 pub fn memory_mapper() -> &'static mut OffsetPageTable<'static> {
@@ -92,7 +99,7 @@ impl BootInfoFrameAllocator {
         // get usable regions from memory map
         let regions = self.memory_map.memmap().iter();
         let usable_regions = regions
-            .filter(|r| r.typ == LimineMemoryMapEntryType::Usable);
+            .filter(|r| r.typ == LimineMemoryMapEntryType::Usable || r.typ == LimineMemoryMapEntryType::BootloaderReclaimable);
         // map each region to its address range
         let addr_ranges = usable_regions
             .map(|r| r.base..(r.base + r.len));

@@ -16,21 +16,11 @@ pub fn load_acpi(rsdp_addr: u64) -> AcpiTables<AcpiHandler> {
 }
 
 #[derive(Clone)]
-pub struct AcpiHandler {
-    pages: Option<PageRangeInclusive>,
-}
+pub struct AcpiHandler;
 
 impl AcpiHandler {
     pub fn new() -> Self {
-        Self {
-            pages: None,
-        }
-    }
-
-    pub fn from_pages(pages: PageRangeInclusive) -> Self {
-        Self {
-            pages: Some(pages),
-        }
+        Self {}
     }
 }
 
@@ -40,25 +30,14 @@ impl AcpiHandlerTrait for AcpiHandler {
         physical_address: usize,
         size: usize
     ) -> PhysicalMapping<Self, T> {
-        let page_start = Page::containing_address(VirtAddr::new(physical_address as u64));
-        let page_end = Page::containing_address(VirtAddr::new(physical_address as u64 + size as u64));
-        let page_range = Page::range_inclusive(page_start, page_end);
-        for page in page_range {
-            let frame = PhysFrame::containing_address(PhysAddr::new(physical_address as u64));
-            crate::memory::map_page_to_frame(page, frame, None).unwrap();
-        }
         PhysicalMapping::new(
             physical_address,
-            core::ptr::NonNull::new_unchecked(page_start.start_address().as_mut_ptr()),
+            core::ptr::NonNull::new_unchecked(physical_address as u64 as *mut T),
             size,
-            (page_end.start_address().as_u64() - page_start.start_address().as_u64()) as usize,
-            Self::from_pages(page_range),
+            size,
+            Self::new(),
         )
     }
 
-    fn unmap_physical_region<T>(region: &PhysicalMapping<Self, T>) {
-        for page in region.handler().pages.unwrap() {
-            crate::memory::unmap_page(page);
-        }
-    }
+    fn unmap_physical_region<T>(region: &PhysicalMapping<Self, T>) {}
 }

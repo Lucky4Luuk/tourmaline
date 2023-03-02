@@ -89,19 +89,47 @@ fn kernel_main(boot_info: &LimineBootInfoResponse) -> ! {
     heap::init();
     info!("Heap initialized!");
 
-    let rsdp_request = LimineRsdpRequest::new(0);
-    let rsdp_addr = rsdp_request.get_response().get().unwrap().address.as_ptr().unwrap() as u64;
+    // Loading the ACPI tables works fine, but initializing the APIC currently fails.
+    // Probably a mistake in my memory allocator, but I don't yet need the APIC anyway.
+    static RSDP_REQUEST: LimineRsdpRequest = LimineRsdpRequest::new(0);
+    let rsdp_addr = RSDP_REQUEST.get_response().get().unwrap().address.as_ptr().unwrap() as u64;
     let acpi_tables = acpi::load_acpi(rsdp_addr);
     let platform_info = acpi_tables.platform_info().expect("Failed to read platform info!");
     debug!("Processors found: {}", platform_info.processor_info.as_ref().map(|pi| pi.application_processors.len() + 1).unwrap_or(1));
+    /*
     if let acpi_crate::InterruptModel::Apic(apic) = &platform_info.interrupt_model {
         apic::init(apic.local_apic_address);
     } else {
         panic!("Unsupported interrupt model! Only APIC is currently supported.");
     }
+    */
 
-    let spawner = Spawner::new();
-    spawner.spawn(kernel_stage_2_main());
+    let bsp_processor_id = platform_info.processor_info.as_ref().map(|pi| pi.boot_processor.processor_uid).unwrap();
+    static SMP_REQUEST: LimineSmpRequest = LimineSmpRequest::new(0).flags(1);
+    if let Some(smp_response) = SMP_REQUEST.get_response().get_mut() {
+        info!("SMP cpus: {}", smp_response.cpus().len());
+        let mut main_cpu_info = None;
+        for cpu in smp_response.cpus() {
+            if cpu.processor_id != bsp_processor_id {
+                cpu.goto_address = smp_main;
+            } else {
+                main_cpu_info = Some(cpu);
+            }
+        }
+        smp_main(main_cpu_info.unwrap().as_ptr())
+    } else {
+        panic!("SMP could not be enabled!");
+    }
 
-    SimpleExecutor::run()
+    // let spawner = Spawner::new();
+    // spawner.spawn(kernel_stage_2_main());
+    //
+    // SimpleExecutor::run()
+}
+
+#[no_mangle]
+extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
+    let info: &'static LimineSmpInfo = unsafe { info.as_ref().unwrap() };
+    info!("Hello from cpu {}!", info.processor_id);
+    hlt_loop();
 }
