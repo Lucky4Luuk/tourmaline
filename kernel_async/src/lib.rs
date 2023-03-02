@@ -16,13 +16,15 @@ mod services;
 const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
 
 pub struct KernelBuilder {
+    spawner: Spawner,
     fb_init: bool,
     log_init: bool,
 }
 
 impl KernelBuilder {
-    pub fn new() -> Self {
+    pub fn new(spawner: Spawner) -> Self {
         Self {
+            spawner: spawner,
             fb_init: false,
             log_init: false,
         }
@@ -42,7 +44,7 @@ impl KernelBuilder {
 
     pub async fn build(self) -> Kernel {
         Kernel {
-            task_spawner: Spawner::new(),
+            task_spawner: self.spawner,
         }
     }
 }
@@ -52,8 +54,8 @@ pub struct Kernel {
 }
 
 impl Kernel {
-    pub fn builder() -> KernelBuilder {
-        KernelBuilder::new()
+    pub fn builder(spawner: Spawner) -> KernelBuilder {
+        KernelBuilder::new(spawner)
     }
 
     fn async_spawn_service(&self) {

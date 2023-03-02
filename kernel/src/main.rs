@@ -56,9 +56,9 @@ pub extern "C" fn _start() -> ! {
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-async fn kernel_stage_2_main() {
+async fn kernel_stage_2_main(spawner: Spawner) {
     info!("Kernel stage 2 started!");
-    kernel_async::Kernel::builder()
+    kernel_async::Kernel::builder(spawner)
         // .with_framebuffer(framebuffer::fb_mut().buffer_mut(), framebuffer::fb_mut().width(), framebuffer::fb_mut().height(), framebuffer::fb_mut().info().stride, framebuffer::fb_mut().info().bytes_per_pixel, framebuffer::fb_mut().info().pixel_format).await
         // .with_logger().await
         .build().await
@@ -111,8 +111,10 @@ fn kernel_main(boot_info: &LimineBootInfoResponse) -> ! {
         let mut main_cpu_info = None;
         for cpu in smp_response.cpus() {
             if cpu.processor_id != bsp_processor_id {
+                cpu.extra_argument = 0;
                 cpu.goto_address = smp_main;
             } else {
+                cpu.extra_argument = 1;
                 main_cpu_info = Some(cpu);
             }
         }
@@ -121,15 +123,18 @@ fn kernel_main(boot_info: &LimineBootInfoResponse) -> ! {
         panic!("SMP could not be enabled!");
     }
 
+    // let executor = SimpleExecutor::new();
+    //
     // let spawner = Spawner::new();
     // spawner.spawn(kernel_stage_2_main());
     //
-    // SimpleExecutor::run()
+    // executor::run()
 }
 
 #[no_mangle]
 extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
     let info: &'static LimineSmpInfo = unsafe { info.as_ref().unwrap() };
-    info!("Hello from cpu {}!", info.processor_id);
+    let is_bsp = info.extra_argument == 1;
+    info!("Hello from cpu {}! {}", info.processor_id, if is_bsp { "I'm the BSP!" } else { "" });
     hlt_loop();
 }

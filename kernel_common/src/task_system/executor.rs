@@ -7,14 +7,9 @@ use sync_wrapper::SyncWrapper;
 use futures_task::waker_ref;
 
 use super::task::ArcTask;
+use super::spawner::Spawner;
 
 pub type TaskQueue = Arc<SegQueue<ArcTask>>;
-
-pub static mut EXECUTOR: SyncWrapper<OnceCell<SimpleExecutor>> = SyncWrapper::new(OnceCell::uninit());
-
-pub fn executor() -> &'static SimpleExecutor {
-    unsafe { EXECUTOR.get_mut().get_or_init(|| SimpleExecutor::new()) }
-}
 
 pub struct SimpleExecutor {
     task_queue: TaskQueue,
@@ -29,12 +24,12 @@ impl SimpleExecutor {
         }
     }
 
-    fn spawn(&mut self, task: ArcTask) {
-        self.task_queue.push(task)
+    pub fn spawner(&self) -> Spawner {
+        Spawner::new(self.task_queue.clone())
     }
 
-    pub fn init() {
-        let _ = executor();
+    fn spawn(&mut self, task: ArcTask) {
+        self.task_queue.push(task)
     }
 
     pub fn task_queue(&self) -> TaskQueue {
@@ -50,8 +45,8 @@ impl SimpleExecutor {
     /// **Warning**: This function should not and will not return!
     ///
     /// ```
-    pub fn run() -> ! {
-        executor().run_internal()
+    pub fn run(self) -> ! {
+        self.run_internal()
     }
 
     fn run_internal(&self) -> ! {

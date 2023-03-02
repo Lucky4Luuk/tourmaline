@@ -1,7 +1,7 @@
 use core::future::Future;
 
 use super::task::{Task, ArcTask};
-use super::executor::{executor, TaskQueue};
+use super::executor::TaskQueue;
 
 #[derive(Clone)]
 pub struct Spawner {
@@ -9,8 +9,7 @@ pub struct Spawner {
 }
 
 impl Spawner {
-    pub fn new() -> Self {
-        let task_queue = executor().task_queue();
+    pub fn new(task_queue: TaskQueue) -> Self {
         Self {
             task_queue,
         }
