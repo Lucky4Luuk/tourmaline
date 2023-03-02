@@ -1,4 +1,15 @@
-fn main() {
-    // let wasm_test = std::path::PathBuf::from(std::env::var_os("CARGO_BIN_FILE_WASM_TEST_wasm_test").unwrap());
-    // println!("cargo:rustc-env=WASM_TEST_PATH={}", wasm_test.display());
+use std::{env, error::Error};
+
+fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    // Get the name of the package.
+    let kernel_name = env::var("CARGO_PKG_NAME")?;
+
+    // Tell rustc to pass the linker script to the linker.
+    println!("cargo:rustc-link-arg-bin={kernel_name}=-Tkernel/conf/linker.ld");
+
+    // Have cargo rerun this script if the linker script or CARGO_PKG_ENV changes
+    println!("cargo:rerun-if-changed=kernel/conf/linker.ld");
+    println!("cargo:rerun-if-env-changed=CARG_PKG_NAME");
+
+    Ok(())
 }

@@ -1,5 +1,7 @@
 //! Asynchronous framebuffer implementation
 
+pub use kernel_common::framebuffer::PixelFormat;
+
 pub static mut FRAMEBUFFER: Option<FbWrapper> = None;
 
 pub async fn init(fb: &'static mut [u8], width: usize, height: usize, stride: usize, bytes_per_pixel: usize, pixel_format: PixelFormat) {
@@ -42,12 +44,6 @@ pub enum TextSize {
     Small,
     Normal,
     Big,
-}
-
-pub enum PixelFormat {
-    Rgb,
-    Bgr,
-    U8
 }
 
 struct FrameBufferInfo {
@@ -144,23 +140,23 @@ impl FbWrapper {
         (x, delta_height)
     }
 
-    pub fn outline(&mut self, area: &Rect, color: [u8; 3]) {
+    pub async fn outline(&mut self, area: &Rect, color: [u8; 3]) {
         for x in area.x0..area.x1 {
-            self.set_pixel(x, area.y0, color);
-            self.set_pixel(x, area.y1-1, color);
+            self.set_pixel(x, area.y0, color).await;
+            self.set_pixel(x, area.y1-1, color).await;
         }
 
         for y in area.y0..area.y1 {
-            self.set_pixel(area.x0, y, color);
-            self.set_pixel(area.x1-1, y, color);
+            self.set_pixel(area.x0, y, color).await;
+            self.set_pixel(area.x1-1, y, color).await;
         }
     }
 
-    pub fn outline_double(&mut self, area: &Rect, color: [u8; 3]) {
+    pub async fn outline_double(&mut self, area: &Rect, color: [u8; 3]) {
         let area_small = Rect::new(area.x0+1, area.y0+1, area.x1-1, area.y1-1);
         let area_large = Rect::new(area.x0-1, area.y0-1, area.x1+1, area.y1+1);
-        self.outline(&area_small, color);
-        self.outline(&area_large, color);
+        self.outline(&area_small, color).await;
+        self.outline(&area_large, color).await;
     }
 
     pub fn set_pixel_sync(&mut self, x: usize, y: usize, color: [u8; 3]) {

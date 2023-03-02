@@ -1,16 +1,26 @@
-// TODO: Implement "real" async versions of framebuffer functions
-
-use bootloader_api::{
-    BootInfo,
-    info::{
-        FrameBuffer,
-        FrameBufferInfo,
-        PixelFormat,
-        Optional,
-    },
-};
+use limine::*;
+use kernel_common::framebuffer::PixelFormat;
 
 pub static mut FRAMEBUFFER: Option<FbWrapper> = None;
+
+pub fn init() {
+    let framebuffer_request = LimineFramebufferRequest::new(0);
+    if let Some(framebuffer_response) = framebuffer_request.get_response().get() {
+        let framebuffer = &framebuffer_response.framebuffers()[0];
+        unsafe {
+            FRAMEBUFFER = Some(FbWrapper::new(&framebuffer));
+        }
+    } else {
+        panic!("Failed to initialize framebuffer!");
+    }
+}
+
+#[inline]
+pub fn fb_mut() -> &'static mut FbWrapper {
+    unsafe {
+        FRAMEBUFFER.as_mut().unwrap()
+    }
+}
 
 pub struct Rect {
     pub x0: usize,
@@ -37,17 +47,32 @@ pub enum TextSize {
     Big,
 }
 
+#[derive(Copy, Clone)]
+pub struct FramebufferInfo {
+    width: usize,
+    height: usize,
+    stride: usize,
+    bytes_per_pixel: usize,
+    pixel_format: PixelFormat,
+}
+
 pub struct FbWrapper {
-    fb: &'static mut FrameBuffer,
-    info: FrameBufferInfo,
+    fb: &'static mut [u8],
+    info: FramebufferInfo,
     clear_color: [u8; 3],
 }
 
 impl FbWrapper {
-    fn new(fb: &'static mut FrameBuffer) -> Self {
-        let info = fb.info();
+    fn new(fb: &LimineFramebuffer) -> Self {
+        let info = FramebufferInfo {
+            width: fb.width as usize,
+            height: fb.height as usize,
+            stride: fb.pitch as usize,
+            bytes_per_pixel: fb.bpp as usize,
+            pixel_format: PixelFormat::Rgb,
+        };
         Self {
-            fb,
+            fb: unsafe { core::slice::from_raw_parts_mut(fb.address.as_ptr().unwrap(), fb.size()) },
             info,
             clear_color: [0,0,0],
         }
@@ -55,7 +80,7 @@ impl FbWrapper {
 
     #[inline]
     pub fn buffer_mut(&mut self) -> &mut [u8] {
-        self.fb.buffer_mut()
+        self.fb
     }
 
     pub fn set_clear_color(&mut self, color: [u8; 3]) {
@@ -69,7 +94,7 @@ impl FbWrapper {
 
     pub fn width(&self) -> usize { self.info.width }
     pub fn height(&self) -> usize { self.info.height }
-    pub fn info(&self) -> FrameBufferInfo { self.info }
+    pub fn info(&self) -> FramebufferInfo { self.info }
 
     // TODO: Use bottom of area to stop printing
     pub fn print(&mut self, area: &Rect, color: [u8; 3], size: TextSize, text: &str) -> (usize, usize) {
@@ -145,11 +170,10 @@ impl FbWrapper {
 
     pub fn set_pixel(&mut self, x: usize, y: usize, color: [u8; 3]) {
         if x >= self.width() || y >= self.height() { return; }
-        let buf_mut = self.fb.buffer_mut();
         let i = x + y * self.info.stride;
         let byte_idx = i * self.info.bytes_per_pixel;
         let next_byte_idx = (i + 1) * self.info.bytes_per_pixel;
-        let raw_pixel = &mut buf_mut[byte_idx..next_byte_idx];
+        let raw_pixel = &mut self.fb[byte_idx..next_byte_idx];
         match self.info.pixel_format {
             PixelFormat::Rgb => {
                 raw_pixel[..3].copy_from_slice(&color);
@@ -170,13 +194,12 @@ impl FbWrapper {
         let y1 = y1.min(self.height());
         let w = x1 - x0;
         let h = y1 - y0;
-        let buf_mut = self.fb.buffer_mut();
         for x in x0..x1 {
             for y in y0..y1 {
                 let i = x + y * self.info.stride;
                 let byte_idx = i * self.info.bytes_per_pixel;
                 let next_byte_idx = (i + 1) * self.info.bytes_per_pixel;
-                let raw_pixel = &mut buf_mut[byte_idx..next_byte_idx];
+                let raw_pixel = &mut self.fb[byte_idx..next_byte_idx];
                 let mut pixel: [u8; 3] = [0,0,0];
                 match self.info.pixel_format {
                     PixelFormat::Rgb => {
@@ -214,22 +237,5 @@ impl FbWrapper {
 
     pub fn for_pixel<F: Fn(usize, usize, usize, usize, &mut [u8; 3])>(&mut self, f: F) {
         self.for_pixel_in_range(0,0, self.info.width,self.info.height, f)
-    }
-}
-
-pub fn init(boot_info_framebuffer: &'static mut Optional<FrameBuffer>) {
-    if let Some(framebuffer) = boot_info_framebuffer.as_mut() {
-        unsafe {
-            FRAMEBUFFER = Some(FbWrapper::new(framebuffer));
-        }
-    } else {
-        panic!("Failed to initialize framebuffer!");
-    }
-}
-
-#[inline]
-pub fn fb_mut() -> &'static mut FbWrapper {
-    unsafe {
-        FRAMEBUFFER.as_mut().unwrap()
     }
 }

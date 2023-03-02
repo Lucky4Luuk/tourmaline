@@ -1,12 +1,13 @@
-[package]
-name = "tourmaline"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = [
+    "kernel",
+    "kernel_async",
+    "kernel_common",
+]
+exclude = ["wasm_test"]
 
-[build-dependencies]
-bootloader = "0.11"
-kernel = { path = "kernel", artifact = "bin", target = "x86_64-unknown-none" }
-wasm_test = { path = "wasm_test", artifact = "cdylib", target = "wasm32-unknown-unknown" }
+[profile.dev]
+panic = "abort"
 
-[dependencies]
-ovmf-prebuilt = "0.1.0-alpha.1"
+[profile.release]
+panic = "abort"

@@ -1,15 +1,27 @@
+use limine::*;
 use x86_64::{VirtAddr, PhysAddr};
 use x86_64::structures::paging::{Page, PageTable, OffsetPageTable};
 
 static mut MEMORY_MAPPER: Option<OffsetPageTable> = None;
 static mut FRAME_ALLOCATOR: Option<BootInfoFrameAllocator> = None;
 
-pub fn init(phys_mem_offset: VirtAddr, memory_regions: &'static bootloader_api::info::MemoryRegions) {
-    let mut memory_mapper = unsafe { init_mapper(phys_mem_offset) };
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&memory_regions) };
-    unsafe {
-        MEMORY_MAPPER = Some(memory_mapper);
-        FRAME_ALLOCATOR = Some(frame_allocator);
+static HHDM_REQUEST: LimineHhdmRequest = LimineHhdmRequest::new(0);
+static MEMMAP_REQUEST: LimineMemmapRequest = LimineMemmapRequest::new(0);
+
+pub fn init() {
+    if let Some(hhdm_response) = HHDM_REQUEST.get_response().get() {
+        if let Some(memmap_response) = MEMMAP_REQUEST.get_response().get() {
+            let mut memory_mapper = unsafe { init_mapper(VirtAddr::new(hhdm_response.offset)) };
+            let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(memmap_response) };
+            unsafe {
+                MEMORY_MAPPER = Some(memory_mapper);
+                FRAME_ALLOCATOR = Some(frame_allocator);
+            }
+        } else {
+            panic!("Failed to get memory map information!");
+        }
+    } else {
+        panic!("Failed to get HHDM information!");
     }
 }
 
@@ -52,11 +64,9 @@ pub unsafe fn init_mapper(physical_memory_offset: VirtAddr) -> OffsetPageTable<'
     OffsetPageTable::new(level_4_table, physical_memory_offset)
 }
 
-use bootloader_api::info::MemoryRegions;
-
 /// A FrameAllocator that returns usable frames from the bootloader's memory map.
 pub struct BootInfoFrameAllocator {
-    memory_map: &'static MemoryRegions,
+    memory_map: &'static LimineMemmapResponse,
     next: usize,
 }
 
@@ -66,7 +76,7 @@ impl BootInfoFrameAllocator {
     /// This function is unsafe because the caller must guarantee that the passed
     /// memory map is valid. The main requirement is that all frames that are marked
     /// as `USABLE` in it are really unused.
-    pub unsafe fn init(memory_map: &'static MemoryRegions) -> Self {
+    pub unsafe fn init(memory_map: &'static LimineMemmapResponse) -> Self {
         BootInfoFrameAllocator {
             memory_map,
             next: 0,
@@ -74,19 +84,18 @@ impl BootInfoFrameAllocator {
     }
 }
 
-use bootloader_api::info::MemoryRegionKind;
 use x86_64::structures::paging::{FrameAllocator, Size4KiB, PhysFrame};
 
 impl BootInfoFrameAllocator {
     /// Returns an iterator over the usable frames specified in the memory map.
     fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
         // get usable regions from memory map
-        let regions = self.memory_map.iter();
+        let regions = self.memory_map.memmap().iter();
         let usable_regions = regions
-            .filter(|r| r.kind == MemoryRegionKind::Usable);
+            .filter(|r| r.typ == LimineMemoryMapEntryType::Usable);
         // map each region to its address range
         let addr_ranges = usable_regions
-            .map(|r| r.start..r.end);
+            .map(|r| r.base..(r.base + r.len));
         // transform to an iterator of frame start addresses
         let frame_addresses = addr_ranges.flat_map(|r| r.step_by(4096));
         // create `PhysFrame` types from the start addresses
