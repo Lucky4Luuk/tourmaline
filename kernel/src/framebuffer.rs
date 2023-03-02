@@ -2,10 +2,10 @@ use limine::*;
 use kernel_common::framebuffer::PixelFormat;
 
 pub static mut FRAMEBUFFER: Option<FbWrapper> = None;
+static FRAMEBUFFER_REQUEST: LimineFramebufferRequest = LimineFramebufferRequest::new(0);
 
 pub fn init() {
-    let framebuffer_request = LimineFramebufferRequest::new(0);
-    if let Some(framebuffer_response) = framebuffer_request.get_response().get() {
+    if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response().get() {
         let framebuffer = &framebuffer_response.framebuffers()[0];
         unsafe {
             FRAMEBUFFER = Some(FbWrapper::new(&framebuffer));
@@ -64,12 +64,13 @@ pub struct FbWrapper {
 
 impl FbWrapper {
     fn new(fb: &LimineFramebuffer) -> Self {
+        let rgb_or_bgr = if fb.memory_model == 1 { PixelFormat::Rgb } else { PixelFormat::Bgr };
         // fb.bpp is bits per pixel
         let (bytes_per_pixel, pixel_format) = match fb.bpp {
             8 => (1, PixelFormat::U8),
             16 => (2, PixelFormat::U8),
-            24 => (3, PixelFormat::Rgb),
-            32 => (4, PixelFormat::Rgb),
+            24 => (3, rgb_or_bgr),
+            32 => (4, rgb_or_bgr),
             _ => unimplemented!(),
         };
         let info = FramebufferInfo {
@@ -178,11 +179,30 @@ impl FbWrapper {
         self.outline(&area_large, color);
     }
 
+    pub fn get_pixel(&mut self, x: usize, y: usize) -> [u8; 3] {
+        if x >= self.width() || y >= self.height() { return [0,0,0]; }
+        let byte_idx = x * self.info.bytes_per_pixel + y * self.info.stride;
+        let next_byte_idx = byte_idx + self.info.bytes_per_pixel;
+        let raw_pixel = &mut self.fb[byte_idx..next_byte_idx];
+        let c = &raw_pixel[..3];
+        match self.info.pixel_format {
+            PixelFormat::Rgb => {
+                [c[0], c[1], c[2]]
+            },
+            PixelFormat::Bgr => {
+                [c[2], c[1], c[0]]
+            },
+            PixelFormat::U8 => {
+                [c[0], 0, 0]
+            },
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn set_pixel(&mut self, x: usize, y: usize, color: [u8; 3]) {
         if x >= self.width() || y >= self.height() { return; }
-        let i = x + y * self.info.stride;
-        let byte_idx = i * self.info.bytes_per_pixel;
-        let next_byte_idx = (i + 1) * self.info.bytes_per_pixel;
+        let byte_idx = x * self.info.bytes_per_pixel + y * self.info.stride;
+        let next_byte_idx = byte_idx + self.info.bytes_per_pixel;
         let raw_pixel = &mut self.fb[byte_idx..next_byte_idx];
         match self.info.pixel_format {
             PixelFormat::Rgb => {
@@ -206,41 +226,9 @@ impl FbWrapper {
         let h = y1 - y0;
         for x in x0..x1 {
             for y in y0..y1 {
-                let i = x + y * self.info.stride;
-                let byte_idx = i * self.info.bytes_per_pixel;
-                let next_byte_idx = (i + 1) * self.info.bytes_per_pixel;
-                let raw_pixel = &mut self.fb[byte_idx..next_byte_idx];
-                let mut pixel: [u8; 3] = [0,0,0];
-                match self.info.pixel_format {
-                    PixelFormat::Rgb => {
-                        pixel[0] = raw_pixel[0];
-                        pixel[1] = raw_pixel[1];
-                        pixel[2] = raw_pixel[2];
-                    },
-                    PixelFormat::Bgr => {
-                        pixel[0] = raw_pixel[2];
-                        pixel[1] = raw_pixel[1];
-                        pixel[2] = raw_pixel[0];
-                    },
-                    PixelFormat::U8 => {
-                        pixel[0] = raw_pixel[0];
-                    },
-                    _ => unimplemented!(),
-                }
+                let mut pixel = self.get_pixel(x,y);
                 f(x - x0, y - y0, w, h, &mut pixel);
-                match self.info.pixel_format {
-                    PixelFormat::Rgb => {
-                        raw_pixel[..3].copy_from_slice(&pixel);
-                    },
-                    PixelFormat::Bgr => {
-                        let pixel = [pixel[2], pixel[1], pixel[0]];
-                        raw_pixel[..3].copy_from_slice(&pixel);
-                    },
-                    PixelFormat::U8 => {
-                        raw_pixel[0] = pixel[0];
-                    },
-                    _ => unimplemented!(),
-                }
+                self.set_pixel(x,y,pixel);
             }
         }
     }

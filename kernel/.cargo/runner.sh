@@ -60,8 +60,7 @@ if [ "$RUN_AS_CMD" = false ]; then
         -machine q35 -cpu qemu64 -M smm=off -smp 4 \
         -D target/log.txt -d int \
         -serial stdio \
-        -bios $BIOS_PATH \
-        -drive format=raw,file=$KERNEL.iso
+        $KERNEL.iso
 fi
 if [ "$RUN_AS_CMD" = true ]; then
     WIN_PWD=`wslpath -w "$(pwd)"`
@@ -70,6 +69,5 @@ if [ "$RUN_AS_CMD" = true ]; then
         -machine q35 -cpu qemu64 -M smm=off -smp 4 \
         -D target/log.txt -d int \
         -serial stdio \
-        -bios $BIOS_PATH \
-        -drive format=raw,file=${WIN_KERNEL}"
+        ${WIN_KERNEL}"
 fi

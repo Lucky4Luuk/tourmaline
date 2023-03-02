@@ -50,8 +50,6 @@ pub fn hlt_loop() -> ! {
 pub extern "C" fn _start() -> ! {
     if let Some(bootinfo) = BOOTLOADER_INFO.get_response().get() {
         kernel_main(bootinfo);
-    } else {
-        panic!("test");
     }
     hlt_loop();
 }
