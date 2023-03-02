@@ -4,10 +4,7 @@ members = [
     "kernel_async",
     "kernel_common",
 ]
-exclude = ["wasm_test"]
-
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"
+exclude = [
+    "runner",
+    "wasm_test",
+]

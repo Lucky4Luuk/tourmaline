@@ -32,12 +32,14 @@ mod memory;
 mod heap;
 mod acpi;
 mod apic;
-// mod wasm;
-// mod ring3;
 
 use limine::*;
 
 static BOOTLOADER_INFO: LimineBootInfoRequest = LimineBootInfoRequest::new(0);
+
+pub fn hlt_loop() -> ! {
+    loop { x86_64::instructions::hlt(); }
+}
 
 /// Kernel Entry Point
 ///
@@ -48,8 +50,10 @@ static BOOTLOADER_INFO: LimineBootInfoRequest = LimineBootInfoRequest::new(0);
 pub extern "C" fn _start() -> ! {
     if let Some(bootinfo) = BOOTLOADER_INFO.get_response().get() {
         kernel_main(bootinfo);
+    } else {
+        panic!("test");
     }
-    loop { x86_64::instructions::hlt(); }
+    hlt_loop();
 }
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

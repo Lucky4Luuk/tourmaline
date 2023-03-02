@@ -7,6 +7,7 @@
 # Config
 ################################################################################
 RUN_AS_CMD=true
+BIOS_PATH="target/efi/OVMF-pure-efi.fd"
 LIMINE_GIT_URL="https://github.com/limine-bootloader/limine.git"
 
 ################################################################################
@@ -21,7 +22,7 @@ echo "Kernel path: $KERNEL"
 
 # Clone the `limine` repository if we don't have it yet.
 if [ ! -d target/limine ]; then
-    git clone $LIMINE_GIT_URL --depth=1 --branch v3.0-branch-binary target/limine
+    git clone $LIMINE_GIT_URL --depth=1 --branch v4.x-branch-binary target/limine
 fi
 
 # Make sure we have an up-to-date version of the bootloader.
@@ -36,6 +37,9 @@ echo "$PWD"
 # Copy the needed files into an ISO image.
 mkdir -p target/iso_root
 cp $KERNEL kernel/conf/limine.cfg target/limine/limine.sys target/limine/limine-cd.bin target/limine/limine-cd-efi.bin target/iso_root
+mkdir -p target/iso_root/EFI
+mkdir -p target/iso_root/EFI/BOOT
+cp target/limine/BOOTX64.efi target/iso_root/EFI/BOOT
 
 xorriso -as mkisofs                                             \
     -b limine-cd.bin                                            \
@@ -54,16 +58,18 @@ echo "If starting qemu fails on WSL, please set the RUN_AS_CMD flag at the top o
 if [ "$RUN_AS_CMD" = false ]; then
     qemu-system-x86_64 \
         -machine q35 -cpu qemu64 -M smm=off -smp 4 \
-        -D target/log.txt -d int,guest_errors -no-reboot -no-shutdown \
+        -D target/log.txt -d int \
         -serial stdio \
-        $KERNEL.iso
+        -bios $BIOS_PATH \
+        -drive format=raw,file=$KERNEL.iso
 fi
 if [ "$RUN_AS_CMD" = true ]; then
     WIN_PWD=`wslpath -w "$(pwd)"`
     WIN_KERNEL=`wslpath -w "$KERNEL.iso"`
     cmd.exe /c "pushd ${WIN_PWD} && qemu-system-x86_64 \
         -machine q35 -cpu qemu64 -M smm=off -smp 4 \
-        -D target/log.txt -d int,guest_errors -no-reboot -no-shutdown \
+        -D target/log.txt -d int \
         -serial stdio \
-        ${WIN_KERNEL}"
+        -bios $BIOS_PATH \
+        -drive format=raw,file=${WIN_KERNEL}"
 fi

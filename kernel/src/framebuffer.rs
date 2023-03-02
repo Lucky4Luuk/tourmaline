@@ -64,15 +64,25 @@ pub struct FbWrapper {
 
 impl FbWrapper {
     fn new(fb: &LimineFramebuffer) -> Self {
+        // fb.bpp is bits per pixel
+        let (bytes_per_pixel, pixel_format) = match fb.bpp {
+            8 => (1, PixelFormat::U8),
+            16 => (2, PixelFormat::U8),
+            24 => (3, PixelFormat::Rgb),
+            32 => (4, PixelFormat::Rgb),
+            _ => unimplemented!(),
+        };
         let info = FramebufferInfo {
             width: fb.width as usize,
             height: fb.height as usize,
             stride: fb.pitch as usize,
-            bytes_per_pixel: fb.bpp as usize,
-            pixel_format: PixelFormat::Rgb,
+            bytes_per_pixel,
+            pixel_format,
         };
+        let fb_len = (info.width + info.height * info.stride) * info.bytes_per_pixel;
+        // let fb_len = fb.size();
         Self {
-            fb: unsafe { core::slice::from_raw_parts_mut(fb.address.as_ptr().unwrap(), fb.size()) },
+            fb: unsafe { core::slice::from_raw_parts_mut(fb.address.as_ptr().unwrap(), fb_len) },
             info,
             clear_color: [0,0,0],
         }
