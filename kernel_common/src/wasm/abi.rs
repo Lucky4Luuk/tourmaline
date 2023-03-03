@@ -4,33 +4,11 @@ use alloc::string::String;
 use wasmi::core::{HostError, Trap};
 use wasmi::{Store, Func, Caller, IntoFunc};
 
+pub use super::abi_trait::Abi;
+
 use super::async_bridge::AbiAsyncBridge;
 
-static ABI_LOCK: spin::Mutex<()> = spin::Mutex::new(());
-
-fn with_lock<T, F: FnOnce() -> T>(f: F) -> T {
-    let lock = ABI_LOCK.lock();
-    let res = f();
-    drop(lock);
-    res
-}
-
 pub type Handle = u32;
-
-pub trait Abi: Send + Sync {
-    fn yield_to_kernel(&self) -> Result<(), Trap> { Err(YieldError.into()) }
-    fn int3(&self);
-
-    fn sys_log(&self, data: &[u8]);
-
-    // Opening certain handles
-    fn stdout(&self) -> Handle { todo!("stdout"); }
-
-    // Handle related functions
-    fn handle_close(&self, _handle: Handle) { todo!("handle_close"); }
-    fn handle_write(&self, _handle: Handle, _data: &[u8]) { todo!("handle_write"); }
-    fn handle_read(&self, _handle: Handle, _data_ptr: i32, _data_len: u32) { todo!("handle_read"); }
-}
 
 pub struct AbiFunc {
     name: String,
@@ -48,30 +26,12 @@ impl AbiFunc {
 
 pub trait AbiFuncIter: Abi {
     fn functions(&'static self, store: &mut Store<()>) -> Vec<AbiFunc> {
-        vec![
-            AbiFunc::wrap("yield_to_kernel", store, |_caller: Caller<'_, ()>| with_lock(|| self.yield_to_kernel())),
-            AbiFunc::wrap("int3", store, |_caller: Caller<'_, ()>| with_lock(|| self.int3())),
-
-            AbiFunc::wrap("sys_log", store, |mut caller: Caller<'_, ()>, data_ptr: i32, data_len: u32| with_lock(|| {
-                let memory = caller.get_export("memory").map(|export| export.into_memory()).flatten().unwrap();
-                let bytes: &[u8] = &memory.data_mut(&mut caller)[data_ptr as usize .. (data_ptr as usize + data_len as usize)];
-                self.sys_log(bytes);
-            })),
-
-            AbiFunc::wrap("stdout", store, |_caller: Caller<'_, ()>| self.stdout()),
-
-            AbiFunc::wrap("handle_close", store, |_caller: Caller<'_, ()>, handle: Handle| self.handle_close(handle)),
-            AbiFunc::wrap("handle_write", store, |mut caller: Caller<'_, ()>, handle: Handle, data_ptr: i32, data_len: u32| {
-                let memory = caller.get_export("memory").map(|export| export.into_memory()).flatten().unwrap();
-                let bytes: &[u8] = &memory.data_mut(&mut caller)[data_ptr as usize .. (data_ptr as usize + data_len as usize)];
-                self.handle_write(handle, bytes);
-            }),
-        ]
+        include!("code_gen.rs")
     }
 
     fn write_to_builder(&'static self, mut builder: super::backend::ModuleBuilder) -> super::backend::ModuleBuilder {
         for func in self.functions(&mut builder.store) {
-            builder = builder.with_func("env", func.name, func.func);
+            builder = builder.with_func("wasi_snapshot_preview1", func.name, func.func);
         }
         builder
     }

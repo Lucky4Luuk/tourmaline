@@ -122,7 +122,7 @@ extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
     let processor_id = info.extra_argument as usize;
     info!("Hello from cpu {}!", processor_id);
 
-    if info.processor_id < 4 {
+    if info.processor_id < 1 {
         let executor = SimpleExecutor::new();
         let spawner = executor.spawner();
         spawner.spawn(kernel_stage_2_main(spawner.clone(), processor_id));

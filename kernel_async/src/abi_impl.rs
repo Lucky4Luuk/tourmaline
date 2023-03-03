@@ -17,15 +17,8 @@ impl Abi {
 }
 
 impl AbiTrait for Abi {
-    fn int3(&self) { trace!("int3!!!"); }
-
-    fn sys_log(&self, data: &[u8]) {
-        let msg = core::str::from_utf8(data).unwrap();
-        trace!("[WASM] {}", strip_trailing_newline(msg));
-    }
-
-    fn stdout(&self) -> Handle {
-        2
+    fn fd_write(&self, fd: i32, ciov_buf: i32, ciov_buf_len: i32, offset0: i32) -> i32 {
+        panic!("fd_write");
     }
 }
 

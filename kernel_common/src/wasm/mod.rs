@@ -1,4 +1,5 @@
 mod backend;
+mod abi_trait;
 pub mod abi;
 pub mod async_bridge;
 
@@ -21,7 +22,7 @@ impl WasmProgram {
         }
     }
 
-    pub async fn run(&mut self) {
+    pub async fn run(mut self) {
         self.module.run().await;
     }
 }

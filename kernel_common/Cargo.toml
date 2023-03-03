@@ -11,7 +11,9 @@ spin = { version = "0.9.5", features = ["mutex"] }
 conquer-once = { version = "0.3.2", default-features = false }
 crossbeam-queue = { version = "0.3.8", default-features = false, features = ["alloc"] }
 futures-task = { version = "0.3.26", default-features = false, features = ["alloc"] }
-wasmi = { version = "0.27.0", default-features = false }
 hashbrown = "0.13.2"
 x86_64 = "0.14.10"
 cmos-rtc = "0.1.1"
+async-trait = "0.1.64"
+
+wasmi = { version = "0.27.0", default-features = false }

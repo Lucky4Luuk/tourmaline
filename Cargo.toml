@@ -7,4 +7,5 @@ members = [
 exclude = [
     "runner",
     "wasm_test",
+    "wasi_test",
 ]

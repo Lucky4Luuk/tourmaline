@@ -13,7 +13,8 @@ mod logger;
 mod abi_impl;
 mod services;
 
-const WASM_TEST: &'static [u8] = include_bytes!("../../wasm_test/target/wasm32-unknown-unknown/release/wasm_test.wasm");
+// const WASM_TEST: &'static [u8] = include_bytes!("../../wasm_test/target/wasm32-unknown-unknown/release/wasm_test.wasm");
+const WASM_TEST: &'static [u8] = include_bytes!("../../wasi_test/target/wasm32-wasi/release/wasi_test.wasm");
 
 pub struct KernelBuilder {
     spawner: Spawner,
@@ -68,10 +69,10 @@ impl Kernel {
 
     pub async fn run(self) {
         // self.task_spawner.spawn_async(log_printer()).await;
-        // self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
-        // for i in 0..10 {
-        //     self.task_spawner.spawn_async(test(self.processor_id, i)).await;
-        // }
+        self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
+        for i in 0..10 {
+            self.task_spawner.spawn_async(test(self.processor_id, i)).await;
+        }
     }
 }
 

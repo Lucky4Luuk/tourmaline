@@ -8,17 +8,18 @@ use hashbrown::HashMap;
 pub struct WasmModule {
     module: Module,
     store: Store<()>,
-    instance: Instance,
+    instance: InstancePre,
 }
 
 impl WasmModule {
     /// Runs the module to completion
-    /// Yields when calling a function returns a Trap::OutOfFuel error
-    pub async fn run(&mut self) {
+    /// Yields when calling a function returns a Resumable error
+    /// NOTE: Out of fuel trap is not resumable! Only host errors are resumable.
+    ///       See: https://github.com/paritytech/wasmi/issues/696
+    pub async fn run(mut self) {
         use crate::task_system::task::yield_now;
-
-        let entry_point = self.instance.get_typed_func::<(), ()>(&self.store, "start").expect("Failed to get `main` function!");
-
+        let instance = self.instance.ensure_no_start(&mut self.store).expect("Failed to start instance!");
+        let entry_point = instance.get_typed_func::<(), ()>(&self.store, "_start").expect("Failed to get `_start` function!");
         let values: [Value; 0] = [];
         let mut call_result = entry_point.call_resumable(&mut self.store, ()).map_err(|e| wasmi::Error::from(e));
         loop {
@@ -64,8 +65,7 @@ impl ModuleBuilder {
         let mut store = self.store;
         let module = self.module;
         let instance = linker
-            .instantiate(&mut store, &module).expect("Failed to instantiate instance!")
-            .start(&mut store).expect("Failed to start instance!");
+            .instantiate(&mut store, &module).expect("Failed to instantiate instance!");
 
         let wasm_module = WasmModule {
             module,

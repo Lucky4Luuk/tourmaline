@@ -1,6 +1,8 @@
 // TODO: Move functionality of kernel/conf/runner.sh here
 //       Then maybe we can compile on windows lol
 
+#![feature(exit_status_error)]
+
 use std::process::Command;
 use std::path::PathBuf;
 
@@ -16,14 +18,14 @@ fn main() {
     println!("Success! Calling `cargo run --release` on the kernel package now...");
 
     Command::new("cargo")
-        .current_dir("../wasm_test")
+        .current_dir("../wasi_test")
         .arg("build")
         .arg("--release")
-        .spawn().unwrap().wait().unwrap();
+        .spawn().unwrap().wait().unwrap().exit_ok().unwrap();
 
     Command::new("cargo")
         .current_dir("../kernel")
         .arg("run")
         .arg("--release")
-        .spawn().unwrap().wait().unwrap();
+        .spawn().unwrap().wait().unwrap().exit_ok().unwrap();
 }

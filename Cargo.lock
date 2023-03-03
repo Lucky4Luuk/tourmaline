@@ -197,6 +197,7 @@ name = "kernel_common"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "cmos-rtc",
  "conquer-once",
  "crossbeam-queue",
