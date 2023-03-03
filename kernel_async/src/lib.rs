@@ -13,7 +13,7 @@ mod logger;
 mod abi_impl;
 mod services;
 
-const WASM_TEST: &'static [u8] = include_bytes!(env!("WASM_TEST_PATH"));
+const WASM_TEST: &'static [u8] = include_bytes!("../../wasm_test/target/wasm32-unknown-unknown/release/wasm_test.wasm");
 
 pub struct KernelBuilder {
     spawner: Spawner,
