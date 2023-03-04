@@ -73,19 +73,23 @@ fn abi_code_gen() {
         for arg in &call.args {
             let name = &arg.name;
             let ty = &arg.ty;
-            gen_args.push_str(&format!("{name}, "));
-            gen_args_def.push_str(&format!("{name}: {ty}, "));
+            if name.contains("caller") {
+                gen_args.push_str("Context::from_caller(caller), ");
+            } else {
+                gen_args.push_str(&format!("{name}, "));
+                gen_args_def.push_str(&format!("{name}: {ty}, "));
+            }
         }
         gen_args.pop();
         gen_args.pop();
         gen_args_def.pop();
         gen_args_def.pop();
         let name = &call.name;
-        let generated_call = format!(r#"AbiFunc::wrap("{name}", store, |mut caller: Caller<'_, ()>{gen_args_def}| self.{name}({gen_args})),"#);
+        let generated_call = format!(r#"AbiFunc::wrap("{name}", store, |caller: Caller<'_, ()>{gen_args_def}| self.{name}({gen_args})),"#);
         generated_code.push('\t');
         generated_code.push_str(&generated_call);
         generated_code.push('\n');
     }
     generated_code.push(']');
-    std::fs::write("src/wasm/code_gen.rs", generated_code.bytes().collect::<Vec<u8>>());
+    std::fs::write("src/wasm/code_gen.rs", generated_code.bytes().collect::<Vec<u8>>()).unwrap();
 }

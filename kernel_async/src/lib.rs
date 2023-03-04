@@ -68,10 +68,12 @@ impl Kernel {
     }
 
     pub async fn run(self) {
-        // self.task_spawner.spawn_async(log_printer()).await;
-        self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
-        for i in 0..10 {
-            self.task_spawner.spawn_async(test(self.processor_id, i)).await;
+        if self.processor_id == 0 {
+            // self.task_spawner.spawn_async(log_printer()).await;
+            self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
+            for i in 0..10 {
+                self.task_spawner.spawn_async(test(self.processor_id, i)).await;
+            }
         }
     }
 }

@@ -2,11 +2,51 @@ use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::string::String;
 use wasmi::core::{HostError, Trap};
-use wasmi::{Store, Func, Caller, IntoFunc};
+use wasmi::{Store, Func, Caller, IntoFunc, AsContextMut};
 
 pub use super::abi_trait::Abi;
 
-use super::async_bridge::AbiAsyncBridge;
+#[repr(C)]
+#[derive(Debug)]
+pub struct Ciov {
+    pub ptr: u32,
+    pub len: u32,
+}
+
+#[derive(Debug)]
+pub enum ContextError {
+    MemoryNotFound,
+    MemoryReadOutOfBounds,
+}
+
+pub struct Context<'a> {
+    caller: Caller<'a, ()>,
+}
+
+impl<'a> Context<'a> {
+    pub(crate) fn from_caller(caller: Caller<'a, ()>) -> Self {
+        Self {
+            caller,
+        }
+    }
+
+    pub fn read_memory(&mut self, addr: usize, len: usize) -> Result<&[u8], ContextError> {
+        let memory = self.caller.get_export("memory").map(|export| export.into_memory()).flatten().ok_or(ContextError::MemoryNotFound)?;
+        let bytes: &[u8] = &memory.data_mut(self.caller.as_context_mut()).get(addr .. (addr + len)).ok_or(ContextError::MemoryReadOutOfBounds)?;
+        Ok(bytes)
+    }
+
+    pub fn read_memory_with_ciovs(&mut self, ciovs: Vec<Ciov>) -> Result<Vec<u8>, ContextError> {
+        let mut result = Vec::new();
+        for ciov in ciovs {
+            let addr = ciov.ptr as usize;
+            let len = ciov.len as usize;
+            let bytes: &[u8] = self.read_memory(addr, len)?;
+            result.extend_from_slice(bytes);
+        }
+        Ok(result)
+    }
+}
 
 pub type Handle = u32;
 

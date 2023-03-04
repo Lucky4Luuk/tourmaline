@@ -120,14 +120,11 @@ extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
     let processor_id = info.extra_argument as usize;
     info!("Hello from cpu {}!", processor_id);
 
-    if info.processor_id < 1 {
-        let executor = SimpleExecutor::new();
-        let spawner = executor.spawner();
-        spawner.spawn(kernel_stage_2_main(spawner.clone(), processor_id));
-        executor.run();
-    }
-
-    hlt_loop();
+    // This is the processor that will run all important services that CANNOT freeze.
+    let executor = SimpleExecutor::new();
+    let spawner = executor.spawner();
+    spawner.spawn(kernel_stage_2_main(spawner.clone(), processor_id));
+    executor.run()
 }
 
 async fn kernel_stage_2_main(spawner: Spawner, processor_id: usize) {
