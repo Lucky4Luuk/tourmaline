@@ -63,33 +63,28 @@ impl Kernel {
         KernelBuilder::new(spawner, processor_id)
     }
 
-    fn async_spawn_service(&self) {
-
+    // TODO: Once we have a global scheduler that can pick the right core, send tasks there.
+    //       Right now, this can only spawn tasks on the local executor.
+    async fn spawn_async(&self, service: impl core::future::Future<Output = ()> + Send + 'static) {
+        self.task_spawner.spawn_async(service).await;
     }
 
     pub async fn run(self) {
         if self.processor_id == 0 {
-            // self.task_spawner.spawn_async(log_printer()).await;
-            self.task_spawner.spawn_async(run_wasm(WASM_TEST)).await;
-            for i in 0..10 {
-                self.task_spawner.spawn_async(test(self.processor_id, i)).await;
-            }
+            // self.spawn_async(run_wasm(WASM_TEST)).await;
+            // for i in 0..10 {
+            //     self.spawn_async(test(self.processor_id, i)).await;
+            // }
         }
     }
 }
 
 async fn run_wasm(data: &[u8]) {
-    let mut wasm_program = kernel_common::wasm::WasmProgram::new(data, &abi_impl::ABI);
+    let wasm_program = kernel_common::wasm::WasmProgram::new(data, &abi_impl::ABI);
     wasm_program.run().await;
 }
 
 async fn test(id: usize, i: usize) {
     if i % 2 == 0 { kernel_common::task_system::task::yield_now().await; }
     debug!("[{id}] i: {i}");
-}
-
-async fn log_printer() {
-    loop {
-
-    }
 }
