@@ -15,8 +15,6 @@
 /// To avoid import collisions with our acpi module, we import it specifically as acpi_crate
 extern crate acpi as acpi_crate;
 
-use x86_64::VirtAddr;
-
 use raw_cpuid::CpuId;
 
 use kernel_common::task_system::{

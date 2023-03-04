@@ -1,23 +1,15 @@
 use x86_64::VirtAddr;
 use x86_64::structures::paging::Page;
-// use slab_allocator_rs::LockedHeap;
-// use linked_list_allocator::LockedHeap;
 use good_memory_allocator::SpinLockedAllocator;
 use conquer_once::spin::Once;
 use crate::memory;
 
 #[global_allocator]
 static ALLOCATOR: SpinLockedAllocator = SpinLockedAllocator::empty();
-// static ALLOCATOR: LockedHeap = LockedHeap::empty();
 static HEAP_INITIALIZED: Once = Once::uninit();
 
 pub const HEAP_START: usize = 0x_4444_4444_0000;
 pub const HEAP_SIZE: usize = 1024 * 4096;
-
-#[alloc_error_handler]
-fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
-    panic!("allocation error: {:?}", layout)
-}
 
 pub fn is_initialized() -> bool {
     HEAP_INITIALIZED.is_initialized()

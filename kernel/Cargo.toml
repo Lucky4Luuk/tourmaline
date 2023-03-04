@@ -20,19 +20,7 @@ hashbrown = "0.13.2"
 
 thiserror-no-std = "2.0.2"
 lazy_static = { version = "1.4", features = ["spin_no_std"] }
-# slab_allocator_rs = "1.0.2"
-# linked_list_allocator = "0.10.4"
 good_memory_allocator = "0.1.7"
 
 log = "0.4"
 noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_16", "size_20", "size_32"] }
-
-# Cranelift compiler
-# target-lexicon = "0.8.1"
-# cranelift-codegen = { path = "../cranelift-no_std/cranelift-codegen", default-features = false, features = ["core"] }
-# cranelift-entity = { path = "../cranelift-no_std/cranelift-entity", default-features = false, features = ["core"] }
-# cranelift-native = { path = "../cranelift-no_std/cranelift-native", default-features = false, features = ["core"] }
-# cranelift-wasm = { path = "../cranelift-no_std/cranelift-wasm", default-features = false, features = ["core"] }
-
-indexmap-nostd = { version = "0.4.0", default-features = false }
-more-asserts = "0.2.1"

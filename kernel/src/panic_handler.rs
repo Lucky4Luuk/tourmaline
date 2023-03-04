@@ -12,20 +12,23 @@ fn panic(info: &PanicInfo) -> ! {
 
     let mut buf = [0u8; 4096];
 
-    let mut fb = framebuffer::fb_mut();
-    let width = fb.width();
-    let height = fb.height();
-    fb.set_clear_color(bg_col);
-    fb.clear();
-    let mut panic_area = framebuffer::Rect::new(0, height / 4, width, height);
-    let (panic_width, _) = fb.print(&panic_area, bg_col, TextSize::Big, "PANIC!");
-    fb.clear();
-    panic_area.x0 = width / 2 - panic_width / 2;
-    let (_, delta_height) = fb.print(&panic_area, fg_col, TextSize::Big, "PANIC!\n");
-    let mut text_area = framebuffer::Rect::new(width / 6, height / 4 + delta_height + 8, width * 5 / 6, height * 3 / 4);
-    let (_, delta_height) = fb.print(&text_area, fg_col, TextSize::Normal, util::show(&mut buf, format_args!("{}\n", info)).unwrap_or("FMT FAILED\n"));
-    text_area.y1 = text_area.y1.max(text_area.y0 + delta_height);
-    let outline_area = framebuffer::Rect::new(text_area.x0 - 2, text_area.y0 - 2, text_area.x1 + 2, text_area.y1 + 2);
-    fb.outline_double(&outline_area, fg_col);
-    loop {}
+    {
+        let mut fb = framebuffer::fb_mut();
+        let width = fb.width();
+        let height = fb.height();
+        fb.set_clear_color(bg_col);
+        fb.clear();
+        let mut panic_area = framebuffer::Rect::new(0, height / 4, width, height);
+        let (panic_width, _) = fb.print(&panic_area, bg_col, TextSize::Big, "PANIC!");
+        fb.clear();
+        panic_area.x0 = width / 2 - panic_width / 2;
+        let (_, delta_height) = fb.print(&panic_area, fg_col, TextSize::Big, "PANIC!\n");
+        let mut text_area = framebuffer::Rect::new(width / 6, height / 4 + delta_height + 8, width * 5 / 6, height * 3 / 4);
+        let (_, delta_height) = fb.print(&text_area, fg_col, TextSize::Normal, util::show(&mut buf, format_args!("{}\n", info)).unwrap_or("FMT FAILED\n"));
+        text_area.y1 = text_area.y1.max(text_area.y0 + delta_height);
+        let outline_area = framebuffer::Rect::new(text_area.x0 - 2, text_area.y0 - 2, text_area.x1 + 2, text_area.y1 + 2);
+        fb.outline_double(&outline_area, fg_col);
+    }
+
+    crate::hlt_loop();
 }

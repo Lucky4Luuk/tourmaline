@@ -48,7 +48,10 @@ fn abi_code_gen() {
             };
             for arg in args_split {
                 if arg.len() < 2 { continue; }
-                let name = arg[0].to_string();
+                let mut name = arg[0].to_string();
+                if name.starts_with("_") {
+                    name.remove(0);
+                }
                 let ty = arg[1].to_string();
                 call.args.push(AbiValue {
                     name,

@@ -1,3 +1,7 @@
+# Specific files
+kernel_common/src/wasm/code_gen.rs
+
+# Generic for the whole project
 *.pyc
 *.bk
 *.swp
