@@ -4,7 +4,6 @@ use alloc::{
     boxed::Box,
     string::String,
 };
-use crossbeam_queue::SegQueue;
 use conquer_once::spin::OnceCell;
 use hashbrown::HashMap;
 use spin::Mutex;
@@ -17,13 +16,34 @@ pub fn service_manager() -> &'static ServiceManager {
 
 pub trait Message: Send + Sync {
     fn target(&self) -> &str;
-
+    fn data(&self) -> &[u8];
+    /// Optional method to encode the data as a &str.
+    /// By default, it's implemented to just return None.
+    fn data_as_str(&self) -> Option<&str> { None }
     /// Called by the service that handled the message.
-    fn on_response(&self, response: Box<dyn Message>);
+    /// The default implementation simply does nothing.
+    fn on_response(&self, _response: Box<dyn Message>) {}
 }
 
-pub type ArcMessage = Arc<Box<dyn Message>>;
-pub type MessageQueue = SegQueue<ArcMessage>;
+// pub type ArcMessage = Arc<Box<dyn Message>>;
+pub struct ArcMessage {
+    inner: Arc<Box<dyn Message>>,
+}
+
+impl ArcMessage {
+    pub fn new(msg: Box<dyn Message>) -> Self {
+        Self {
+            inner: Arc::new(msg),
+        }
+    }
+}
+
+impl core::ops::Deref for ArcMessage {
+    type Target = Arc<Box<dyn Message>>;
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
 
 pub trait Service: Send + Sync {
     /// Used for service identification. Should remain constant while the service is running!
@@ -31,8 +51,10 @@ pub trait Service: Send + Sync {
     /// Specify the services this service depends on.
     /// If you attempt to start this service, it should try to start
     /// it's dependencies first. Make sure not to specify circular dependencies!
-    fn dependencies(&self) -> Vec<Box<dyn Service>>;
-    fn message_queue(&self) -> MessageQueue;
+    fn dependencies(&self) -> Vec<Box<dyn Service>> { Vec::new() }
+    /// Called by the ServiceManager to push a message to this service.
+    /// Response to the message can be sent with `[Message::on_response]`
+    fn push_message(&self, message: ArcMessage);
 }
 
 /// A handle to a running service
@@ -48,7 +70,7 @@ impl ServiceHandle {
     }
 
     pub fn push_message(&self, message: ArcMessage) {
-        self.service.message_queue().push(message);
+        self.service.push_message(message);
     }
 }
 
