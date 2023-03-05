@@ -39,7 +39,8 @@ impl log::Log for FramebufferLogger {
             };
             // let size = framebuffer::TextSize::Small;
             let size = framebuffer::TextSize::Normal;
-            let mut lock = self.y.lock(); // This lock also synchronizes printing
+
+            let mut lock = self.y.lock();
             let mut fb = framebuffer::fb_mut();
             if *lock >= fb.height() {
                 *lock = 0;

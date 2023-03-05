@@ -1,9 +1,7 @@
 use alloc::sync::Arc;
 use core::task::{Context, Poll};
 
-use conquer_once::spin::OnceCell;
 use crossbeam_queue::SegQueue;
-use sync_wrapper::SyncWrapper;
 use futures_task::waker_ref;
 
 use super::task::ArcTask;
@@ -49,9 +47,7 @@ impl SimpleExecutor {
     }
 
     fn run_internal(&self) -> ! {
-        use x86_64::instructions::interrupts;
         loop {
-            interrupts::disable();
             // TODO: This polls tasks until they are ready
             //       For a better implementation, see:
             //       https://os.phil-opp.com/async-await/#executor-with-waker-support
@@ -70,8 +66,6 @@ impl SimpleExecutor {
                     }
                 }
             }
-            // Hlt until an interrupt comes in
-            interrupts::enable_and_hlt();
         }
     }
 }

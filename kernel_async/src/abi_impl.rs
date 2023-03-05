@@ -22,6 +22,7 @@ impl Abi {
 
 impl AbiTrait for Abi {
     // Offset0 is where the result must be written.
+    // Returns the amount of bytes written.
     fn fd_write(&self, mut context: Context, fd: i32, ciov_buf: i32, ciov_buf_len: i32, offset0: i32) -> i32 {
         let ciov_bytes = context.read_memory(ciov_buf as usize, ciov_buf_len as usize * core::mem::size_of::<Ciov>()).unwrap();
         let ciovs: Vec<Ciov> = ciov_bytes.chunks_exact(8).map(|bytes| {

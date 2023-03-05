@@ -12,6 +12,7 @@ pub mod logger;
 pub mod task_system;
 pub mod wasm;
 pub mod framebuffer;
+pub mod services;
 
 pub trait StaticRef: Sized + 'static {
     const CONST: &'static Self;

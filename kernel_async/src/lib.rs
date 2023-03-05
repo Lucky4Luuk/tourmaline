@@ -6,7 +6,10 @@
 #[macro_use] extern crate log;
 #[macro_use] extern crate async_trait;
 
-use kernel_common::task_system::spawner::Spawner;
+use kernel_common::task_system::{
+    spawner::Spawner,
+    scheduler::scheduler_spawn_task,
+};
 
 pub mod framebuffer;
 mod logger;
@@ -63,18 +66,15 @@ impl Kernel {
         KernelBuilder::new(spawner, processor_id)
     }
 
-    // TODO: Once we have a global scheduler that can pick the right core, send tasks there.
-    //       Right now, this can only spawn tasks on the local executor.
-    async fn spawn_async(&self, service: impl core::future::Future<Output = ()> + Send + 'static) {
-        self.task_spawner.spawn_async(service).await;
+    async fn spawn_async(&self, task: impl core::future::Future<Output = ()> + Send + 'static) {
+        // self.task_spawner.spawn_async(task).await;
+        let spawner_idx = scheduler_spawn_task(task);
+        info!("Spawning task on spawner {spawner_idx}...");
     }
 
     pub async fn run(self) {
         if self.processor_id == 0 {
             // self.spawn_async(run_wasm(WASM_TEST)).await;
-            // for i in 0..10 {
-            //     self.spawn_async(test(self.processor_id, i)).await;
-            // }
         }
     }
 }
@@ -86,5 +86,5 @@ async fn run_wasm(data: &[u8]) {
 
 async fn test(id: usize, i: usize) {
     if i % 2 == 0 { kernel_common::task_system::task::yield_now().await; }
-    debug!("[{id}] i: {i}");
+    debug!("i: {i} - spawned from processor {id}");
 }

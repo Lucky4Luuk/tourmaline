@@ -20,6 +20,7 @@ use raw_cpuid::CpuId;
 use kernel_common::task_system::{
     executor::SimpleExecutor,
     spawner::Spawner,
+    scheduler::scheduler_add_spawner,
 };
 
 mod util;
@@ -120,10 +121,14 @@ extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
     let processor_id = info.extra_argument as usize;
     info!("Hello from cpu {}!", processor_id);
 
-    // This is the processor that will run all important services that CANNOT freeze.
+    // Create the async executor for this core
     let executor = SimpleExecutor::new();
     let spawner = executor.spawner();
+    // Add the spawner for this core to the global scheduler
+    scheduler_add_spawner(spawner.clone());
+    // Spawn the kernel_stage_2_main task on the current core
     spawner.spawn(kernel_stage_2_main(spawner.clone(), processor_id));
+    // Run the executor
     executor.run()
 }
 
