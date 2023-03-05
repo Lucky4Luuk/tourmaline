@@ -5,13 +5,6 @@ use kernel_common::wasm::abi::{
     Abi as AbiTrait
 };
 
-fn strip_trailing_newline(input: &str) -> &str {
-    input
-        .strip_suffix("\r\n")
-        .or(input.strip_suffix("\n"))
-        .unwrap_or(input)
-}
-
 pub struct Abi;
 
 impl Abi {
@@ -21,7 +14,7 @@ impl Abi {
 }
 
 impl AbiTrait for Abi {
-    // Offset0 is where the result must be written.
+    // Offset0 is where the result will be written.
     // Returns the amount of bytes written.
     fn fd_write(&self, mut context: Context, fd: i32, ciov_buf: i32, ciov_buf_len: i32, offset0: i32) -> i32 {
         let ciov_bytes = context.read_memory(ciov_buf as usize, ciov_buf_len as usize * core::mem::size_of::<Ciov>()).unwrap();
@@ -40,6 +33,14 @@ impl AbiTrait for Abi {
         } else {
             unimplemented!("fd_write with fd {fd}")
         }
+    }
+
+    fn environ_sizes_get(&self, caller: Context, offset0: i32, offset1: i32) -> i32 {
+        0
+    }
+
+    fn environ_get(&self, caller: Context, environ: i32, environ_buf: i32) -> i32 {
+        0
     }
 }
 
