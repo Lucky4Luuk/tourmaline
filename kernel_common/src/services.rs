@@ -15,14 +15,15 @@ pub fn service_manager() -> &'static ServiceManager {
 }
 
 pub trait Message: Send + Sync {
+    fn as_any(&self) -> &dyn core::any::Any { unimplemented!("Message::as_any") }
     fn target(&self) -> &str;
-    fn data(&self) -> &[u8];
+    fn data(&self) -> &[u8] { unimplemented!("Message::data") }
     /// Optional method to encode the data as a &str.
     /// By default, it's implemented to just return None.
     fn data_as_str(&self) -> Option<&str> { None }
     /// Called by the service that handled the message.
     /// The default implementation simply does nothing.
-    fn on_response(&self, _response: Box<dyn Message>) {}
+    fn on_response(&self, _response: ArcMessage) {}
 }
 
 // pub type ArcMessage = Arc<Box<dyn Message>>;

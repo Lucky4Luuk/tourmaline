@@ -1,3 +1,6 @@
+mod file_descriptor_manager;
+pub use file_descriptor_manager::*;
+
 use alloc::string::String;
 use kernel_common::services::*;
 
@@ -27,6 +30,5 @@ impl StdoutSyslogMessage {
 
 impl Message for StdoutSyslogMessage {
     fn target(&self) -> &str { "stdout_syslog" }
-    fn data(&self) -> &[u8] { self.data.as_bytes() }
     fn data_as_str(&self) -> Option<&str> { Some(&self.data) }
 }

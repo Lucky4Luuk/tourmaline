@@ -75,6 +75,7 @@ impl Kernel {
     pub async fn run(self) {
         if self.processor_id == 0 {
             kernel_common::services::service_manager().add_service(alloc::boxed::Box::new(services::StdoutSyslog));
+            kernel_common::services::service_manager().add_service(alloc::boxed::Box::new(services::FileDescriptorManager::new()));
             self.spawn_async(run_wasm(WASM_TEST)).await;
         }
     }

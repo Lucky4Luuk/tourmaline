@@ -24,15 +24,20 @@ impl AbiTrait for Abi {
             Ciov { ptr, len }
         }).collect();
         let read_data = context.read_memory_with_ciovs(ciovs).unwrap();
+
+        let message = crate::services::FdMessage::fd_write(fd, read_data.to_vec());
+        kernel_common::services::service_manager().route_message(kernel_common::services::ArcMessage::new(alloc::boxed::Box::new(message)));
+        0
+
         // Special case for stdout
-        if fd == 1 {
-            let text = core::str::from_utf8(&read_data).unwrap();
-            let message = crate::services::StdoutSyslogMessage::new(text);
-            kernel_common::services::service_manager().route_message(kernel_common::services::ArcMessage::new(alloc::boxed::Box::new(message))).unwrap();
-            0
-        } else {
-            unimplemented!("fd_write with fd {fd}")
-        }
+        // if fd == 1 {
+        //     let text = core::str::from_utf8(&read_data).unwrap();
+        //     let message = crate::services::StdoutSyslogMessage::new(text);
+        //     kernel_common::services::service_manager().route_message(kernel_common::services::ArcMessage::new(alloc::boxed::Box::new(message))).unwrap();
+        //     0
+        // } else {
+        //     unimplemented!("fd_write with fd {fd}")
+        // }
     }
 
     fn environ_sizes_get(&self, caller: Context, offset0: i32, offset1: i32) -> i32 {
