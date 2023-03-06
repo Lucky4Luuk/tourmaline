@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 log = "0.4"
+as-any = "0.3.0"
 anyhow = { version = "1.0", default-features = false }
 sync_wrapper = "0.1.2"
 spin = { version = "0.9.5", features = ["mutex"] }

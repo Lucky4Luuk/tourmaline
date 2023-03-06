@@ -24,7 +24,8 @@ impl WasmModule {
         let mut call_result = entry_point.call_resumable(&mut self.store, ()).map_err(|e| wasmi::Error::from(e));
         loop {
             if call_result.is_err() {
-                panic!("WASM trap encountered: {:?}", call_result);
+                error!("WASM trap encountered: {:?}", call_result);
+                return;
             } else {
                 yield_now().await;
                 if let TypedResumableCall::Resumable(call) = call_result.unwrap() {

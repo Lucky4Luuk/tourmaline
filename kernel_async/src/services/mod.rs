@@ -11,20 +11,36 @@ impl Service for StdoutSyslog {
     fn name(&self) -> String { String::from("stdout_syslog") }
 
     fn push_message(&self, message: ArcMessage) {
-        let text = message.data_as_str().unwrap();
-        info!("TEXT!@!! {text}");
+        if let Some(message) = message.as_any().downcast_ref::<StdoutSyslogMessage>() {
+            let text = message.data_as_str().unwrap();
+            if message.is_err {
+                error!("[STDERR] {text}");
+            } else {
+                info!("[STDOUT] {text}");
+            }
+        }
     }
 }
 
 pub struct StdoutSyslogMessage {
     data: String,
+    is_err: bool,
 }
 
 impl StdoutSyslogMessage {
-    pub fn new(msg: impl Into<String>) -> Self {
-        Self {
+    pub fn new(msg: impl Into<String>) -> ArcMessage {
+        Self::new_with_err(msg, false)
+    }
+
+    pub fn new_err(msg: impl Into<String>) -> ArcMessage {
+        Self::new_with_err(msg, true)
+    }
+
+    pub fn new_with_err(msg: impl Into<String>, is_err: bool) -> ArcMessage {
+        ArcMessage::new(alloc::boxed::Box::new(Self {
             data: msg.into(),
-        }
+            is_err,
+        }))
     }
 }
 

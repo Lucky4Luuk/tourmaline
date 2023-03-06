@@ -7,6 +7,7 @@ use alloc::{
 use conquer_once::spin::OnceCell;
 use hashbrown::HashMap;
 use spin::Mutex;
+use as_any::AsAny;
 
 static SERVICE_MANAGER: OnceCell<ServiceManager> = OnceCell::uninit();
 
@@ -14,8 +15,7 @@ pub fn service_manager() -> &'static ServiceManager {
     SERVICE_MANAGER.get_or_init(|| ServiceManager::new())
 }
 
-pub trait Message: Send + Sync {
-    fn as_any(&self) -> &dyn core::any::Any { unimplemented!("Message::as_any") }
+pub trait Message: Send + Sync + AsAny {
     fn target(&self) -> &str;
     fn data(&self) -> &[u8] { unimplemented!("Message::data") }
     /// Optional method to encode the data as a &str.
@@ -43,6 +43,12 @@ impl core::ops::Deref for ArcMessage {
     type Target = Arc<Box<dyn Message>>;
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl core::ops::DerefMut for ArcMessage {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }
 
