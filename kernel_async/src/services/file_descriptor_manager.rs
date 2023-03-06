@@ -85,7 +85,7 @@ impl Service for FileDescriptorManager {
                 match &message.kind {
                     FdMessageKind::WriteFd(data) => {
                         fd.write(&data);
-                    }
+                    },
                     _ => unimplemented!(),
                 }
             } else {
