@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::string::String;
 use wasmi::core::{HostError, Trap};
-use wasmi::{Store, Func, Caller, IntoFunc, AsContextMut};
+use wasmi::{Store, Func, Caller, IntoFunc, AsContextMut, Memory};
 
 pub use super::abi_trait::Abi;
 
@@ -30,8 +30,19 @@ impl<'a> Context<'a> {
         }
     }
 
+    fn memory(&self) -> Result<Memory, ContextError> {
+        self.caller.get_export("memory").map(|export| export.into_memory()).flatten().ok_or(ContextError::MemoryNotFound)
+    }
+
+    pub fn write_memory(&mut self, addr: usize, data: &[u8]) -> Result<(), ContextError> {
+        let memory = self.memory()?;
+        let bytes = memory.data_mut(self.caller.as_context_mut()).get_mut(addr .. (addr + data.len())).ok_or(ContextError::MemoryReadOutOfBounds)?;
+        bytes.copy_from_slice(data);
+        Ok(())
+    }
+
     pub fn read_memory(&mut self, addr: usize, len: usize) -> Result<&[u8], ContextError> {
-        let memory = self.caller.get_export("memory").map(|export| export.into_memory()).flatten().ok_or(ContextError::MemoryNotFound)?;
+        let memory = self.memory()?;
         let bytes: &[u8] = &memory.data_mut(self.caller.as_context_mut()).get(addr .. (addr + len)).ok_or(ContextError::MemoryReadOutOfBounds)?;
         Ok(bytes)
     }

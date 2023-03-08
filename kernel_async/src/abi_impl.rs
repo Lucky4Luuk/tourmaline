@@ -24,28 +24,23 @@ impl AbiTrait for Abi {
             Ciov { ptr, len }
         }).collect();
         let read_data = context.read_memory_with_ciovs(ciovs).unwrap();
+        let read_data = read_data.to_vec();
+        let written_bytes = read_data.len() as i32;
 
-        let message = crate::services::FdMessage::fd_write(fd, read_data.to_vec());
+        let message = crate::services::FdMessage::fd_write(fd, read_data);
         kernel_common::services::service_manager().route_message(kernel_common::services::ArcMessage::new(alloc::boxed::Box::new(message)));
-        0
-
-        // Special case for stdout
-        // if fd == 1 {
-        //     let text = core::str::from_utf8(&read_data).unwrap();
-        //     let message = crate::services::StdoutSyslogMessage::new(text);
-        //     kernel_common::services::service_manager().route_message(kernel_common::services::ArcMessage::new(alloc::boxed::Box::new(message))).unwrap();
-        //     0
-        // } else {
-        //     unimplemented!("fd_write with fd {fd}")
-        // }
+        context.write_memory(offset0 as usize, &i32::to_le_bytes(written_bytes));
+        0 // 0 = Success in ErrNo
     }
 
-    fn environ_sizes_get(&self, caller: Context, offset0: i32, offset1: i32) -> i32 {
+    fn environ_sizes_get(&self, mut context: Context, offset0: i32, offset1: i32) -> i32 {
+        context.write_memory(offset0 as usize, &[0; 1]);
+        context.write_memory(offset1 as usize, &[0; 1]);
         0
     }
 
-    fn environ_get(&self, caller: Context, environ: i32, environ_buf: i32) -> i32 {
-        0
+    fn environ_get(&self, context: Context, environ: i32, environ_buf: i32) -> i32 {
+        unimplemented!("environ_get")
     }
 }
 

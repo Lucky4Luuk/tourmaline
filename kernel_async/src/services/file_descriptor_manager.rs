@@ -9,6 +9,7 @@ enum FdMessageKind {
 pub struct FdMessage {
     fd: i32,
     kind: FdMessageKind,
+    err_code: spin::Mutex<u8>,
 }
 
 impl FdMessage {
@@ -16,6 +17,7 @@ impl FdMessage {
         Self {
             fd,
             kind: FdMessageKind::WriteFd(data),
+            err_code: spin::Mutex::new(1),
         }
     }
 
@@ -31,9 +33,27 @@ impl Message for FdMessage {
     fn target(&self) -> &str { "fd_manager" }
 
     fn on_response(&self, response: ArcMessage) {
-        // write result back into the original Message
-        // we need the result from where we routed the message from!
+        let err_code = response.data()[0];
+        let mut lock = self.err_code.lock();
+        *lock = err_code;
     }
+}
+
+struct FdMessageErrCode {
+    err_code: [u8; 1],
+}
+
+impl FdMessageErrCode {
+    pub fn new(err_code: u8) -> ArcMessage {
+        ArcMessage::new(alloc::boxed::Box::new(Self {
+            err_code: [err_code],
+        }))
+    }
+}
+
+impl Message for FdMessageErrCode {
+    fn target(&self) -> &str { panic!("FdMessageErrCode does not route anywhere!") }
+    fn data(&self) -> &[u8] { &self.err_code }
 }
 
 #[derive(Clone)]
@@ -44,13 +64,17 @@ pub enum FileDescriptor {
 }
 
 impl FileDescriptor {
-    pub fn write(&self, data: &[u8]) {
+    pub fn write(&self, data: &[u8]) -> u8 {
+        let mut err_code = 0;
         let message = match self {
             Self::Stdout => super::StdoutSyslogMessage::new(core::str::from_utf8(data).unwrap()),
             Self::Stderr => super::StdoutSyslogMessage::new_err(core::str::from_utf8(data).unwrap()),
             _ => unimplemented!(),
         };
-        service_manager().route_message(message);
+        if service_manager().route_message(message).is_err() {
+            err_code = 1;
+        }
+        err_code
     }
 }
 
@@ -84,7 +108,7 @@ impl Service for FileDescriptorManager {
             if let Some(fd) = self.get_fd(message.fd) {
                 match &message.kind {
                     FdMessageKind::WriteFd(data) => {
-                        fd.write(&data);
+                        message.on_response(FdMessageErrCode::new(fd.write(&data)));
                     },
                     _ => unimplemented!(),
                 }

@@ -4,6 +4,13 @@ pub use file_descriptor_manager::*;
 use alloc::string::String;
 use kernel_common::services::*;
 
+fn strip_trailing_newline(input: &str) -> &str {
+    input
+        .strip_suffix("\r\n")
+        .or(input.strip_suffix("\n"))
+        .unwrap_or(input)
+}
+
 /// A temporary kernel service for logging stdout to syslogs
 pub struct StdoutSyslog;
 
@@ -12,7 +19,7 @@ impl Service for StdoutSyslog {
 
     fn push_message(&self, message: ArcMessage) {
         if let Some(message) = message.as_any().downcast_ref::<StdoutSyslogMessage>() {
-            let text = message.data_as_str().unwrap();
+            let text = strip_trailing_newline(message.data_as_str().unwrap());
             if message.is_err {
                 error!("[STDERR] {text}");
             } else {

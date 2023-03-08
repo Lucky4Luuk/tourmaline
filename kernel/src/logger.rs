@@ -42,10 +42,16 @@ impl log::Log for FramebufferLogger {
 
             let mut lock = self.y.lock();
             let mut fb = framebuffer::fb_mut();
-            if *lock >= fb.height() {
-                *lock = 0;
-                fb.clear();
+
+            // Prescroll based on newlines and window width
+            let char_width = size.char_width();
+            let newline_count = format(format_args!("{}\n", record.args())).count_newlines((fb.width() / char_width) + 1) + 1;
+            let expected_height = size.as_u8() as usize * newline_count;
+            if *lock > expected_height && *lock + expected_height >= fb.height() {
+                *lock -= expected_height;
+                fb.scroll_up(expected_height);
             }
+
             let mut area = framebuffer::Rect::new(0, *lock, fb.width(), fb.height());
             let (width, delta_height) = fb.print(&area, level_color, size, format(format_args!("[{}] ", level.as_str())).as_ref());
             area.x0 = width;
@@ -77,6 +83,20 @@ impl<'a> Formatted<'a> {
                 util::show(buf, format_args!("{}", args)).expect("Failed to format string!")
             },
         }
+    }
+
+    fn count_char(&mut self, c: char) -> usize {
+        self.as_ref().chars().filter(|s| *s == c).count()
+    }
+
+    /// fb_width is in characters
+    fn count_newlines(&mut self, fb_width: usize) -> usize {
+        let mut count = 0;
+        for line in self.as_ref().lines() {
+            let split_count = line.chars().count() / fb_width;
+            count += 1 + split_count;
+        }
+        count
     }
 }
 

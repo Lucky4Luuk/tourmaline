@@ -47,6 +47,31 @@ pub enum TextSize {
     Big,
 }
 
+impl TextSize {
+    pub fn as_u8(&self) -> u8 {
+        match self {
+            Self::Small => 16,
+            Self::Normal => 20,
+            Self::Big => 32,
+        }
+    }
+
+    pub(crate) fn size(&self) -> noto_sans_mono_bitmap::RasterHeight {
+        use noto_sans_mono_bitmap::RasterHeight;
+        match self {
+            Self::Small => RasterHeight::Size16,
+            Self::Normal => RasterHeight::Size20,
+            Self::Big => RasterHeight::Size32,
+        }
+    }
+
+    pub fn char_width(&self) -> usize {
+        use noto_sans_mono_bitmap::{get_raster_width, FontWeight};
+        let size = self.size();
+        get_raster_width(FontWeight::Regular, size)
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct FramebufferInfo {
     width: usize,
@@ -108,6 +133,10 @@ impl FbWrapper {
         self.fb
     }
 
+    pub fn width(&self) -> usize { self.info.width }
+    pub fn height(&self) -> usize { self.info.height }
+    pub fn info(&self) -> FramebufferInfo { self.info }
+
     pub fn set_clear_color(&mut self, color: [u8; 3]) {
         self.clear_color = color;
     }
@@ -117,9 +146,14 @@ impl FbWrapper {
         self.for_pixel(|_,_,_,_, pixel| *pixel = color);
     }
 
-    pub fn width(&self) -> usize { self.info.width }
-    pub fn height(&self) -> usize { self.info.height }
-    pub fn info(&self) -> FramebufferInfo { self.info }
+    pub fn scroll_up(&mut self, n: usize) {
+        self.fb.rotate_left(n * self.info.stride);
+        for y in (self.height() - n)..self.height() {
+            for x in 0..self.width() {
+                self.set_pixel(x,y, self.clear_color);
+            }
+        }
+    }
 
     // TODO: Use bottom of area to stop printing
     pub fn print(&mut self, area: &Rect, color: [u8; 3], size: TextSize, text: &str) -> (usize, usize) {
@@ -155,7 +189,7 @@ impl FbWrapper {
                         delta_height += size_num;
                     }
 
-                    let char_raster = get_raster(c, FontWeight::Regular, size).expect("unsupported char");
+                    let char_raster = get_raster(c, FontWeight::Regular, size).unwrap_or_else(|| get_raster('?', FontWeight::Regular, size).expect("Questionmark character not found!"));
                     let raster = char_raster.raster();
 
                     self.for_pixel_in_range(x, y, x + width, y + char_raster.height(), |x,y,w,h, pixel| {
