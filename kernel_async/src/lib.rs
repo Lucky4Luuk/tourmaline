@@ -86,6 +86,13 @@ async fn run_wasm(data: &[u8]) {
     wasm_program.run().await;
 }
 
+async fn yield_loop() {
+    loop {
+        kernel_common::task_system::task::yield_now().await;
+        info!("yielded!");
+    }
+}
+
 async fn test(id: usize, i: usize) {
     if i % 2 == 0 { kernel_common::task_system::task::yield_now().await; }
     debug!("i: {i} - spawned from processor {id}");

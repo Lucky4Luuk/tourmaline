@@ -28,6 +28,7 @@ impl WasmModule {
                 return;
             } else {
                 yield_now().await;
+                self.store.add_fuel(1_000_000);
                 if let TypedResumableCall::Resumable(call) = call_result.unwrap() {
                     call_result = call.resume(&mut self.store, &values[..]);
                 } else {
@@ -45,17 +46,33 @@ pub struct ModuleBuilder {
     functions: HashMap<(String, String), Func>,
 }
 
+fn yield_now() -> Result<(), wasmi::core::Trap> {
+    Err(wasmi::core::Trap::from(super::abi::YieldError))
+}
+
+fn add_default_funcs(mut builder: ModuleBuilder) -> ModuleBuilder {
+    let func = Func::wrap(&mut builder.store, |caller: Caller<'_, ()>| yield_now());
+    let builder = builder.with_func("env", "yield_now", func);
+    builder
+}
+
 impl ModuleBuilder {
     pub fn from_wasm_bytes(data: &[u8]) -> Result<Self> {
-        let engine = Engine::default();
+        let mut config = Config::default();
+        config.consume_fuel(true);
+        let engine = Engine::new(&config);
         let module = Module::new(&engine, data).map_err(Error::msg)?;
-        let store = Store::new(&engine, ());
-        Ok(Self {
+        let mut store = Store::new(&engine, ());
+        store.add_fuel(10_000_000);
+
+        let obj = Self {
             module,
             store,
 
             functions: HashMap::new(),
-        })
+        };
+        let obj = add_default_funcs(obj);
+        Ok(obj)
     }
 
     pub fn build(self) -> super::WasmProgram {

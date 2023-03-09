@@ -1,7 +1,6 @@
 mod backend;
 mod abi_trait;
 pub mod abi;
-pub mod async_bridge;
 
 use backend::{WasmModule, ModuleBuilder};
 

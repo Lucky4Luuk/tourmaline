@@ -9,6 +9,7 @@ kernel_common/src/wasm/code_gen.rs
 *.swx
 tags
 target
+dist
 Cargo.lock
 .*.rustfmt
 cranelift.dbg*
