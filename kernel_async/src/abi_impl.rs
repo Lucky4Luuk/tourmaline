@@ -1,9 +1,14 @@
 use alloc::vec::Vec;
+use alloc::boxed::Box;
+use alloc::string::ToString;
 use kernel_common::wasm::abi::{
     Context,
     Ciov,
     Abi as AbiTrait
 };
+use kernel_common::services::{service_manager, ArcMessage};
+use kernel_common::driver_common::DriverCommand;
+use kernel_common::Promise;
 
 pub struct Abi;
 
@@ -14,6 +19,26 @@ impl Abi {
 }
 
 impl AbiTrait for Abi {
+    fn call_driver(&self, mut context: Context, name_ptr: i32, name_len: i32, cmd: i32, data_ptr: i32, data_len: i32) -> i32 {
+        let name = {
+            let name_bytes = context.read_memory(name_ptr as usize, name_len as usize).unwrap();
+            core::str::from_utf8(name_bytes).unwrap().to_string()
+        };
+        let data = {
+            let data_bytes = context.read_memory(data_ptr as usize, data_len as usize).unwrap();
+            data_bytes.to_vec()
+        };
+
+        let promise = Promise::new();
+        let promise_id = context.store_promise(promise.clone());
+
+        let message = DriverCommand::func(promise, name, cmd as u8, data);
+        let message = ArcMessage::new(Box::new(message));
+        service_manager().route_message(message).unwrap();
+
+        promise_id
+    }
+
     // Offset0 is where the result will be written.
     // Returns the amount of bytes written.
     fn fd_write(&self, mut context: Context, fd: i32, ciov_buf: i32, ciov_buf_len: i32, offset0: i32) -> i32 {
@@ -28,7 +53,7 @@ impl AbiTrait for Abi {
         let written_bytes = read_data.len() as i32;
 
         let message = crate::services::FdMessage::fd_write(fd, read_data);
-        kernel_common::services::service_manager().route_message(kernel_common::services::ArcMessage::new(alloc::boxed::Box::new(message)));
+        kernel_common::services::service_manager().route_message(ArcMessage::new(Box::new(message)));
         context.write_memory(offset0 as usize, &i32::to_le_bytes(written_bytes));
         0 // 0 = Success in ErrNo
     }

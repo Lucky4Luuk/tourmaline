@@ -21,7 +21,7 @@ impl WasmProgram {
         }
     }
 
-    pub async fn run(mut self) {
+    pub async fn run(self) {
         self.module.run().await;
     }
 }

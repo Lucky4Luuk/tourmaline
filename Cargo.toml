@@ -6,6 +6,7 @@ members = [
 ]
 exclude = [
     "runner",
+    "drivers",
     "wasm_test",
     "wasi_test",
 ]

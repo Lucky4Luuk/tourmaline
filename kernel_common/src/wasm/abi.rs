@@ -1,9 +1,9 @@
 use alloc::vec::Vec;
-use alloc::boxed::Box;
 use alloc::string::String;
-use wasmi::core::{HostError, Trap};
+use wasmi::core::HostError;
 use wasmi::{Store, Func, Caller, IntoFunc, AsContextMut, Memory};
 
+use super::backend::ProgStorage;
 pub use super::abi_trait::Abi;
 
 #[repr(C)]
@@ -20,11 +20,24 @@ pub enum ContextError {
 }
 
 pub struct Context<'a> {
-    caller: Caller<'a, ()>,
+    caller: Caller<'a, ProgStorage>,
+}
+
+impl<'a> core::ops::Deref for Context<'a> {
+    type Target = ProgStorage;
+    fn deref(&self) -> &Self::Target {
+        self.caller.data()
+    }
+}
+
+impl<'a> core::ops::DerefMut for Context<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.caller.data_mut()
+    }
 }
 
 impl<'a> Context<'a> {
-    pub(crate) fn from_caller(caller: Caller<'a, ()>) -> Self {
+    pub(crate) fn from_caller(caller: Caller<'a, ProgStorage>) -> Self {
         Self {
             caller,
         }
@@ -62,27 +75,29 @@ impl<'a> Context<'a> {
 pub type Handle = u32;
 
 pub struct AbiFunc {
+    env: String,
     name: String,
     func: Func,
 }
 
 impl AbiFunc {
-    pub fn wrap<Params, Results>(name: impl Into<String>, store: &mut Store<()>, f: impl IntoFunc<(), Params, Results>) -> Self {
+    pub fn wrap<Params, Results>(env: impl Into<String>, name: impl Into<String>, store: &mut Store<ProgStorage>, f: impl IntoFunc<ProgStorage, Params, Results>) -> Self {
         Self {
+            env: env.into(),
             name: name.into(),
-            func: Func::wrap::<(), Params, Results>(store, f),
+            func: Func::wrap::<ProgStorage, Params, Results>(store, f),
         }
     }
 }
 
 pub trait AbiFuncIter: Abi {
-    fn functions(&'static self, store: &mut Store<()>) -> Vec<AbiFunc> {
+    fn functions(&'static self, store: &mut Store<ProgStorage>) -> Vec<AbiFunc> {
         include!("code_gen.rs")
     }
 
     fn write_to_builder(&'static self, mut builder: super::backend::ModuleBuilder) -> super::backend::ModuleBuilder {
         for func in self.functions(&mut builder.store) {
-            builder = builder.with_func("wasi_snapshot_preview1", func.name, func.func);
+            builder = builder.with_func(func.env, func.name, func.func);
         }
         builder
     }

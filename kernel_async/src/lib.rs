@@ -6,17 +6,19 @@
 #[macro_use] extern crate log;
 #[macro_use] extern crate async_trait;
 
+use alloc::boxed::Box;
+
 use kernel_common::task_system::{
     spawner::Spawner,
     scheduler::scheduler_spawn_task,
 };
+use kernel_common::services::service_manager;
+use kernel_common::requests::*;
 
-pub mod framebuffer;
 mod logger;
 mod abi_impl;
 mod services;
 
-// const WASM_TEST: &'static [u8] = include_bytes!("../../wasm_test/target/wasm32-unknown-unknown/release/wasm_test.wasm");
 const WASM_TEST: &'static [u8] = include_bytes!("../../wasi_test/target/wasm32-wasi/release/wasi_test.wasm");
 
 pub struct KernelBuilder {
@@ -36,19 +38,48 @@ impl KernelBuilder {
         }
     }
 
-    pub async fn with_framebuffer(mut self, fb: &'static mut [u8], width: usize, height: usize, stride: usize, bytes_per_pixel: usize, pixel_format: framebuffer::PixelFormat) -> Self {
-        framebuffer::init(fb, width, height, stride, bytes_per_pixel, pixel_format).await;
-        self.fb_init = true;
-        self
+    /// Enables the framebuffer driver
+    pub(crate) async fn with_framebuffer(mut self) -> Self {
+        use framebuffer_driver::*;
+
+        if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response().get() {
+            let fb = &framebuffer_response.framebuffers()[0];
+            let rgb_or_bgr = if fb.memory_model == 1 { PixelFormat::Rgb } else { PixelFormat::Bgr };
+            // fb.bpp is bits per pixel
+            let (bytes_per_pixel, pixel_format) = match fb.bpp {
+                8 => (1, PixelFormat::U8),
+                16 => (2, PixelFormat::U8),
+                24 => (3, rgb_or_bgr),
+                32 => (4, rgb_or_bgr),
+                _ => unimplemented!(),
+            };
+            let info = FramebufferInfo {
+                width: fb.width as usize,
+                height: fb.height as usize,
+                stride: fb.pitch as usize,
+                bytes_per_pixel,
+                pixel_format,
+            };
+            let fb_len = (info.width + info.height * info.stride) * info.bytes_per_pixel;
+            let buf = unsafe { core::slice::from_raw_parts_mut(fb.address.as_ptr().unwrap(), fb_len) };
+            service_manager().add_service(Box::new(FramebufferDriver::init(buf, info)));
+            self.fb_init = true;
+            self
+        } else {
+            panic!("Failed to initialize framebuffer!");
+        }
     }
 
-    pub async fn with_logger(mut self) -> Self {
+    pub(crate) async fn with_logger(mut self) -> Self {
         kernel_common::logger::init(log::LevelFilter::max(), &logger::LOGGER);
         self.log_init = true;
         self
     }
 
-    pub async fn build(self) -> Kernel {
+    pub async fn build(mut self) -> Kernel {
+        self = self.with_framebuffer().await;
+        // self = self.with_logger().await;
+
         Kernel {
             task_spawner: self.spawner,
             processor_id: self.processor_id,
@@ -74,8 +105,8 @@ impl Kernel {
 
     pub async fn run(self) {
         if self.processor_id == 0 {
-            kernel_common::services::service_manager().add_service(alloc::boxed::Box::new(services::StdoutSyslog));
-            kernel_common::services::service_manager().add_service(alloc::boxed::Box::new(services::FileDescriptorManager::new()));
+            service_manager().add_service(Box::new(services::StdoutSyslog));
+            service_manager().add_service(Box::new(services::FileDescriptorManager::new()));
             self.spawn_async(run_wasm(WASM_TEST)).await;
         }
     }

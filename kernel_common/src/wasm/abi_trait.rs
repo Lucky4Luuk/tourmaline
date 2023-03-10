@@ -1,7 +1,9 @@
 use super::abi::Context;
+use super::backend::yield_now;
 
 // See: https://docs.rs/wasmi_wasi/latest/src/wasmi_wasi/sync/snapshots/preview_1.rs.html#92-733
 pub trait Abi: Send + Sync {
+    // ENV: wasi_snapshot_preview1
     fn args_get(&self, _caller: Context, _argv: i32, _argv_buf: i32) -> i32 { todo!("args_get"); }
     fn args_sizes_get(&self, _caller: Context, _offset0: i32, _offset1: i32) -> i32 { todo!("args_sizes_get"); }
     fn environ_get(&self, _caller: Context, _environ: i32, _environ_buf: i32) -> i32 { todo!("environ_get"); }
@@ -42,10 +44,17 @@ pub trait Abi: Send + Sync {
     fn poll_oneoff(&self, _caller: Context, _in_: i32, _out: i32, _nsubscriptions: i32, _offset0: i32) -> i32 { todo!("poll_oneoff"); }
     fn proc_exit(&self, _caller: Context, _rval: i32) -> () { todo!("proc_exit"); }
     fn proc_raise(&self, _caller: Context, _sig: i32) -> i32 { todo!("proc_raise"); }
-    fn sched_yield(&self) -> i32 { todo!("sched_yield"); }
+    /// Default implementation just yields the programming. Only replace if you know what you are doing!
+    fn sched_yield(&self) -> Result<(), wasmi::core::Trap> { yield_now() }
     fn random_get(&self, _caller: Context, _buf: i32, _buf_len: i32) -> i32 { todo!("random_get"); }
     fn sock_accept(&self, _caller: Context, _fd: i32, _flags: i32, _offset0: i32) -> i32 { todo!("sock_accept"); }
     fn sock_recv(&self, _caller: Context, _fd: i32, _iov_buf: i32, _iov_buf_len: i32, _ri_flags: i32, _offset0: i32, _offset1: i32) -> i32 { todo!("sock_recv"); }
     fn sock_send(&self, _caller: Context, _fd: i32, _ciov_buf: i32, _ciov_buf_len: i32, _si_flags: i32, _offset0: i32) -> i32 { todo!("sock_send"); }
     fn sock_shutdown(&self, _caller: Context, _fd: i32, _how: i32) -> i32 { todo!("sock_shutdown"); }
+
+    // ENV: env
+    fn poll_promise(&self, mut caller: Context, promise_id: i32) -> i32 { caller.poll_promise(promise_id) }
+
+    // ENV: driver_abi
+    fn call_driver(&self, _caller: Context, _name_ptr: i32, _name_len: i32, _cmd: i32, _data_ptr: i32, _data_len: i32) -> i32 { todo!("call_driver"); }
 }

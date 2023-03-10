@@ -134,8 +134,6 @@ extern "C" fn smp_main(info: *const LimineSmpInfo) -> ! {
 
 async fn kernel_stage_2_main(spawner: Spawner, processor_id: usize) {
     kernel_async::Kernel::builder(spawner, processor_id)
-        // .with_framebuffer(framebuffer::fb_mut().buffer_mut(), framebuffer::fb_mut().width(), framebuffer::fb_mut().height(), framebuffer::fb_mut().info().stride, framebuffer::fb_mut().info().bytes_per_pixel, framebuffer::fb_mut().info().pixel_format).await
-        // .with_logger().await
         .build().await
         .run().await;
 }

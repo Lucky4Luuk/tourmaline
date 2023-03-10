@@ -1,9 +1,9 @@
 use limine::*;
 use spin::{Mutex, MutexGuard};
-use kernel_common::framebuffer::PixelFormat;
+
+use kernel_common::requests::*;
 
 pub static FRAMEBUFFER: Mutex<FbWrapper> = Mutex::new(FbWrapper::uninit());
-static FRAMEBUFFER_REQUEST: LimineFramebufferRequest = LimineFramebufferRequest::new(0);
 
 pub fn init() {
     if let Some(framebuffer_response) = FRAMEBUFFER_REQUEST.get_response().get() {
@@ -70,6 +70,13 @@ impl TextSize {
         let size = self.size();
         get_raster_width(FontWeight::Regular, size)
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum PixelFormat {
+    Rgb,
+    Bgr,
+    U8
 }
 
 #[derive(Copy, Clone)]

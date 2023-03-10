@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 kernel_common = { path = "../kernel_common" }
+framebuffer_driver = { path = "../drivers/framebuffer" }
 
 log = "0.4"
 noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_16", "size_20", "size_32"] }

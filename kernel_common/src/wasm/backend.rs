@@ -1,20 +1,69 @@
-use alloc::string::String;
 use alloc::vec::Vec;
-// TODO: Support wasmer when it becomes no_std
+use alloc::string::String;
 use wasmi::*;
 use anyhow::{Result, Error};
 use hashbrown::HashMap;
 
+use crate::Promise;
+
+pub struct ProgStorage {
+    promises: Vec<Option<Promise>>,
+}
+
+impl ProgStorage {
+    pub fn new() -> Self {
+        Self {
+            promises: Vec::new(),
+        }
+    }
+
+    pub fn store_promise(&mut self, promise: Promise) -> i32 {
+        for (i, maybe_promise) in self.promises.iter_mut().enumerate() {
+            if maybe_promise.is_none() {
+                *maybe_promise = Some(promise);
+                return i as i32;
+            }
+        }
+
+        // We can only reach this code if no empty slot was found
+        // In this case, we just want to grow the buffer
+        self.promises.push(Some(promise));
+        (self.promises.len() - 1) as i32
+    }
+
+    /// Returns:
+    /// Result<value, error>
+    /// Value maps as following:
+    /// =0 = Pending
+    /// =1 = Promise does not exist
+    /// >1 = Ready(n - 2)
+    pub fn poll_promise(&mut self, promise_id: i32) -> i32 {
+        if let Some(Some(promise)) = self.promises.get(promise_id as usize) {
+            if let Some(value) = promise.poll() {
+                if value >= 0 {
+                    value + 2
+                } else {
+                    value
+                }
+            } else {
+                0 // Pending
+            }
+        } else {
+            1 // Promise does not exist
+        }
+    }
+}
+
 pub struct WasmModule {
     module: Module,
-    store: Store<()>,
+    store: Store<ProgStorage>,
     instance: InstancePre,
 }
 
 impl WasmModule {
     /// Runs the module to completion
     /// Yields when calling a function returns a Resumable error
-    /// NOTE: Out of fuel trap is not resumable! Only host errors are resumable.
+    /// NOTE: Out of fuel trap is not resumable! Only host errors are resumable
     ///       See: https://github.com/paritytech/wasmi/issues/696
     pub async fn run(mut self) {
         use crate::task_system::task::yield_now;
@@ -28,7 +77,9 @@ impl WasmModule {
                 return;
             } else {
                 yield_now().await;
-                self.store.add_fuel(1_000_000);
+                if self.store.fuel_consumed().unwrap() > 1_000_000 {
+                    let _ = self.store.add_fuel(1_000_000);
+                }
                 if let TypedResumableCall::Resumable(call) = call_result.unwrap() {
                     call_result = call.resume(&mut self.store, &values[..]);
                 } else {
@@ -41,18 +92,18 @@ impl WasmModule {
 
 pub struct ModuleBuilder {
     module: Module,
-    pub(crate) store: Store<()>,
+    pub(crate) store: Store<ProgStorage>,
 
     functions: HashMap<(String, String), Func>,
 }
 
-fn yield_now() -> Result<(), wasmi::core::Trap> {
+pub(crate) fn yield_now() -> Result<(), wasmi::core::Trap> {
     Err(wasmi::core::Trap::from(super::abi::YieldError))
 }
 
 fn add_default_funcs(mut builder: ModuleBuilder) -> ModuleBuilder {
-    let func = Func::wrap(&mut builder.store, |caller: Caller<'_, ()>| yield_now());
-    let builder = builder.with_func("env", "yield_now", func);
+    let func = Func::wrap(&mut builder.store, |_caller: Caller<'_, ProgStorage>| yield_now());
+    builder = builder.with_func("env", "yield_now", func);
     builder
 }
 
@@ -62,8 +113,8 @@ impl ModuleBuilder {
         config.consume_fuel(true);
         let engine = Engine::new(&config);
         let module = Module::new(&engine, data).map_err(Error::msg)?;
-        let mut store = Store::new(&engine, ());
-        store.add_fuel(10_000_000);
+        let mut store = Store::new(&engine, ProgStorage::new());
+        let _ = store.add_fuel(10_000_000);
 
         let obj = Self {
             module,
@@ -102,4 +153,14 @@ impl ModuleBuilder {
     pub fn with_abi(self, abi: &'static impl super::abi::AbiFuncIter) -> Self {
         abi.write_to_builder(self)
     }
+
+    /*
+    fn with_driver_func(mut builder: ModuleBuilder, f: impl Fn(Context, *const u8, i32, i32, *const u8, i32)) -> ModuleBuilder {
+        let func = Func::wrap(&mut builder.store, |caller: Caller<'_, ()>, name_ptr: i32, name_len: i32, cmd: i32, data_ptr: i32, data_len: i32| {
+            f(Context::from_caller(caller, name_ptr as *const u8, name_len, cmd, data_ptr as *const u8, data_len))
+        });
+        builder = builder.with_func("driver_abi", "call_driver", func);
+        builder
+    }
+    */
 }
