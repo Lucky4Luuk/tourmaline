@@ -51,15 +51,27 @@ fn wait_for(promise: Promise) -> i32 {
     }
 }
 
+fn set_pixel(x: u32, y: u32, r: u8, g: u8, b: u8) -> Promise {
+    let name = String::from("FRAMEBUFFER_DRIVER");
+    let cmd = 1; // set pixel
+    let mut data = Vec::new();
+    data.extend_from_slice(&u32::to_le_bytes(x));
+    data.extend_from_slice(&u32::to_le_bytes(y));
+    data.push(r);
+    data.push(g);
+    data.push(b);
+    safe_call_driver(name, cmd, data)
+}
+
 fn main() {
     println!("Hello, world!");
 
-    let name = String::from("FRAMEBUFFER_DRIVER");
-    let cmd = 1; // set pixel
-    let data: Vec<u8> = vec![32,48, 255,0,0]; //xy=32,48 - rgb=255,0,0
-    let promise = safe_call_driver(name, cmd, data);
-
-    println!("waiting for the result...");
-    let result = wait_for(promise);
-    println!("result: {:?}", result);
+    for y in 0..255 {
+        for x in 0..255 {
+            unsafe { yield_now(); }
+            let promise = set_pixel(x,y, 255,0,0);
+            unsafe { yield_now(); }
+            let _ = wait_for(promise);
+        }
+    }
 }

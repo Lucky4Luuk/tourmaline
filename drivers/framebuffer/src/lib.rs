@@ -11,6 +11,7 @@ extern crate alloc;
 
 use alloc::string::String;
 
+use kernel_common::Mutex;
 use kernel_common::driver_common::*;
 
 mod framebuffer;
@@ -18,18 +19,43 @@ use framebuffer::*;
 pub use framebuffer::{PixelFormat, FramebufferInfo};
 
 pub struct FramebufferDriver {
-    fb: Framebuffer,
+    fb: Mutex<Framebuffer>,
 }
 
 impl FramebufferDriver {
     pub fn init(fb: &'static mut [u8], info: FramebufferInfo) -> Self {
         Self {
-            fb: Framebuffer::new(fb, info),
+            fb: Mutex::new(Framebuffer::new(fb, info)),
         }
+    }
+
+    fn set_pixel(&self, args: &[u8]) -> Result<(), DriverError> {
+        let pos_x: u32 = u32::from_le_bytes([
+            args.get(0).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+            args.get(1).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+            args.get(2).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+            args.get(3).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+        ]);
+
+        let pos_y: u32 = u32::from_le_bytes([
+            args.get(4).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+            args.get(5).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+            args.get(6).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+            args.get(7).map(|v| *v).ok_or(DriverError::IncorrectArguments)?,
+        ]);
+
+        let r: u8 = args.get(8).map(|v| *v).ok_or(DriverError::IncorrectArguments)?;
+        let g: u8 = args.get(9).map(|v| *v).ok_or(DriverError::IncorrectArguments)?;
+        let b: u8 = args.get(10).map(|v| *v).ok_or(DriverError::IncorrectArguments)?;
+
+        self.fb.lock().set_pixel(pos_x as usize, pos_y as usize, [r,g,b]);
+
+        Ok(())
     }
 
     fn process_func(&self, func: &Func) -> Result<(), DriverError> {
         match func.func_id() {
+            1 => self.set_pixel(func.args()),
             _ => Err(DriverError::UnsupportedFunc)
         }
     }

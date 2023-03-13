@@ -82,7 +82,7 @@ extern "x86-interrupt" fn page_fault_handler(stack_frame: InterruptStackFrame, e
 }
 
 extern "x86-interrupt" fn general_protection_fault_handler(stack_frame: InterruptStackFrame, error_code: u64) {
-    error!("EXCEPTION: GENERAL PROTECTION FAULT\n{:#?}\nError code: {:?}", stack_frame, error_code);
+    panic!("EXCEPTION: GENERAL PROTECTION FAULT\n{:#?}\nError code: {:?}", stack_frame, error_code);
 }
 
 extern "x86-interrupt" fn stack_segment_fault_handler(stack_frame: InterruptStackFrame, error_code: u64) {

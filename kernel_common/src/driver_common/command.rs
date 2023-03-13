@@ -56,7 +56,7 @@ impl Func {
         self.func_id
     }
 
-    pub fn as_byte_slice(&self) -> &[u8] {
+    pub fn args(&self) -> &[u8] {
         &self.args
     }
 }

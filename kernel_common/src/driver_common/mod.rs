@@ -14,6 +14,8 @@ pub use command::*;
 pub enum DriverError {
     UnsupportedCommand = 0,
     UnsupportedFunc,
+
+    IncorrectArguments,
 }
 
 pub trait Driver: Send {

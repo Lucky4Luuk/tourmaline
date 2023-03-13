@@ -16,6 +16,9 @@ pub mod wasm;
 pub mod services;
 pub mod driver_common;
 
+pub use spin::Mutex;
+pub use spin::MutexGuard;
+
 /// A promise for a value. Alternative to Rust futures to be used across WASM.
 /// Because it cannot be generic over a return value, a promise can only
 /// return basic information (in this case, an i32).
