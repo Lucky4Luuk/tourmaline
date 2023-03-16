@@ -60,13 +60,14 @@ if [ "$RUN_AS_CMD" = false ]; then
         -machine q35 -cpu qemu64 -M smm=off -smp 4 \
         -D target/log.txt -d int \
         -serial stdio \
+        -enable-kvm \
         $KERNEL.iso
 fi
 if [ "$RUN_AS_CMD" = true ]; then
     WIN_PWD=`wslpath -w "$(pwd)"`
     WIN_KERNEL=`wslpath -w "$KERNEL.iso"`
     cmd.exe /c "pushd ${WIN_PWD} && qemu-system-x86_64 \
-        -machine q35 -cpu qemu64 -M smm=off -smp 4 \
+        -machine q35 -cpu qemu64 -M smm=off -smp 4 -accel whpx \
         -D target/log.txt -d int \
         -serial stdio \
         ${WIN_KERNEL}"
