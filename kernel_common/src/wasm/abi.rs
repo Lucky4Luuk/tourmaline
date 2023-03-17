@@ -105,6 +105,10 @@ pub trait AbiFuncIter: Abi {
 
 impl<T: Abi> AbiFuncIter for T {}
 
+pub(crate) fn yield_now() -> Result<(), wasmi::core::Trap> {
+    Err(wasmi::core::Trap::from(YieldError))
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct YieldError;
 

@@ -1,6 +1,6 @@
 use core::future::Future;
 
-use super::task::Task;
+use super::task::{Task, ArcTask};
 use super::executor::TaskQueue;
 
 #[derive(Clone)]

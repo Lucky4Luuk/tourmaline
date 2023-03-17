@@ -10,7 +10,7 @@ use alloc::boxed::Box;
 
 use kernel_common::task_system::{
     spawner::Spawner,
-    scheduler::scheduler_spawn_task,
+    scheduler::{scheduler_spawn_task, SchedulerService},
 };
 use kernel_common::services::service_manager;
 use kernel_common::requests::*;
@@ -105,6 +105,7 @@ impl Kernel {
 
     pub async fn run(self) {
         if self.processor_id == 0 {
+            service_manager().add_service(Box::new(SchedulerService));
             service_manager().add_service(Box::new(services::StdoutSyslog));
             service_manager().add_service(Box::new(services::FileDescriptorManager::new()));
             self.spawn_async(run_wasm(WASM_TEST)).await;

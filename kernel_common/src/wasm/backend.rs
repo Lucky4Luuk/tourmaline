@@ -77,8 +77,15 @@ impl WasmModule {
                 return;
             } else {
                 yield_now().await;
-                if self.store.fuel_consumed().unwrap() > 1_000_000 {
-                    let _ = self.store.add_fuel(1_000_000);
+                match self.store.consume_fuel(0) {
+                    Ok(remaining_fuel) => {
+                        // Make sure we are always above 1 million fuel
+                        if remaining_fuel < 10_000_000 {
+                            self.store.add_fuel(10_000_000);
+                        }
+                    },
+                    // Only happens when we have no fuel remaining before consuming fuel
+                    Err(_) => { self.store.add_fuel(10_000_000); },
                 }
                 if let TypedResumableCall::Resumable(call) = call_result.unwrap() {
                     call_result = call.resume(&mut self.store, &values[..]);
@@ -97,16 +104,6 @@ pub struct ModuleBuilder {
     functions: HashMap<(String, String), Func>,
 }
 
-pub(crate) fn yield_now() -> Result<(), wasmi::core::Trap> {
-    Err(wasmi::core::Trap::from(super::abi::YieldError))
-}
-
-fn add_default_funcs(mut builder: ModuleBuilder) -> ModuleBuilder {
-    let func = Func::wrap(&mut builder.store, |_caller: Caller<'_, ProgStorage>| yield_now());
-    builder = builder.with_func("env", "yield_now", func);
-    builder
-}
-
 impl ModuleBuilder {
     pub fn from_wasm_bytes(data: &[u8]) -> Result<Self> {
         let mut config = Config::default();
@@ -114,16 +111,14 @@ impl ModuleBuilder {
         let engine = Engine::new(&config);
         let module = Module::new(&engine, data).map_err(Error::msg)?;
         let mut store = Store::new(&engine, ProgStorage::new());
-        let _ = store.add_fuel(10_000_000);
+        let _ = store.add_fuel(100_000_000);
 
-        let obj = Self {
+        Ok(Self {
             module,
             store,
 
             functions: HashMap::new(),
-        };
-        let obj = add_default_funcs(obj);
-        Ok(obj)
+        })
     }
 
     pub fn build(self) -> super::WasmProgram {

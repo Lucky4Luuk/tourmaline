@@ -19,7 +19,7 @@ impl Abi {
 }
 
 impl AbiTrait for Abi {
-    fn call_driver(&self, mut context: Context, name_ptr: i32, name_len: i32, cmd: i32, data_ptr: i32, data_len: i32) -> i32 {
+    fn driver_write(&self, mut context: Context, name_ptr: i32, name_len: i32, cmd: i32, data_ptr: i32, data_len: i32) -> i32 {
         let name = {
             let name_bytes = context.read_memory(name_ptr as usize, name_len as usize).unwrap();
             core::str::from_utf8(name_bytes).unwrap().to_string()
@@ -37,6 +37,18 @@ impl AbiTrait for Abi {
         service_manager().route_message(message).unwrap();
 
         promise_id
+    }
+
+    fn driver_read(&self, mut context: Context, name_ptr: i32, name_len: i32, cmd: i32, data_ptr: i32, data_len: i32) -> i32 {
+        let name = {
+            let name_bytes = context.read_memory(name_ptr as usize, name_len as usize).unwrap();
+            core::str::from_utf8(name_bytes).unwrap().to_string()
+        };
+        // let data = {
+        //     let data_bytes = context.read_memory(data_ptr as usize, data_len as usize).unwrap();
+        //     data_bytes.to_vec()
+        // };
+        todo!()
     }
 
     // Offset0 is where the result will be written.

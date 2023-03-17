@@ -1,5 +1,35 @@
+use alloc::string::String;
+use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+
+use core::future::Future;
+use core::pin::Pin;
+
+use sync_wrapper::SyncWrapper;
+
 use super::spawner::Spawner;
+use crate::services::*;
+
+pub struct SchedulerMessage {
+    future: spin::Mutex<SyncWrapper<Option<Pin<Box< dyn Future<Output = ()> + Send >>>>>,
+}
+
+impl Message for SchedulerMessage {
+    fn target(&self) -> &str { "scheduler_service" }
+}
+
+pub struct SchedulerService;
+impl Service for SchedulerService {
+    fn name(&self) -> String { String::from("scheduler_service") }
+    fn push_message(&self, message: ArcMessage) {
+        if let Some(msg) = message.as_any().downcast_ref::<SchedulerMessage>() {
+            if let Some(task) = msg.future.lock().get_mut().take() {
+                scheduler_spawn_task(task);
+            }
+        }
+    }
+}
 
 pub(crate) static SCHEDULER: spin::Mutex<Scheduler> = spin::Mutex::new(Scheduler::new());
 
