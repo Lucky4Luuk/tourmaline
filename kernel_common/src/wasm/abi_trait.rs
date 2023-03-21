@@ -61,4 +61,8 @@ pub trait Abi: Send + Sync {
     // ENV: driver_abi
     fn driver_write(&self, _caller: Context, _name_ptr: i32, _name_len: i32, _cmd: i32, _data_ptr: i32, _data_len: i32) -> i32 { todo!("call_driver"); }
     fn driver_read(&self, _caller: Context, _name_ptr: i32, _name_len: i32, _cmd: i32, _data_ptr: i32, _data_len: i32) -> i32 { todo!("call_driver"); }
+
+    // ENV: host_abi
+    fn host_memset(&self, _caller: Context, _addr: i32, _data_ptr: i32, _data_len: i32) -> i32 { todo!("host_memset"); }
+    fn host_memread(&self, _caller: Context, _read_addr: i32, _buf_ptr: i32, _buf_len: i32) -> i32 { todo!("host_memread"); }
 }

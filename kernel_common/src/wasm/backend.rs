@@ -148,14 +148,4 @@ impl ModuleBuilder {
     pub fn with_abi(self, abi: &'static impl super::abi::AbiFuncIter) -> Self {
         abi.write_to_builder(self)
     }
-
-    /*
-    fn with_driver_func(mut builder: ModuleBuilder, f: impl Fn(Context, *const u8, i32, i32, *const u8, i32)) -> ModuleBuilder {
-        let func = Func::wrap(&mut builder.store, |caller: Caller<'_, ()>, name_ptr: i32, name_len: i32, cmd: i32, data_ptr: i32, data_len: i32| {
-            f(Context::from_caller(caller, name_ptr as *const u8, name_len, cmd, data_ptr as *const u8, data_len))
-        });
-        builder = builder.with_func("driver_abi", "call_driver", func);
-        builder
-    }
-    */
 }

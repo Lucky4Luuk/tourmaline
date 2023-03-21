@@ -108,6 +108,7 @@ impl Kernel {
             service_manager().add_service(Box::new(SchedulerService));
             service_manager().add_service(Box::new(services::StdoutSyslog));
             service_manager().add_service(Box::new(services::FileDescriptorManager::new()));
+            // self.spawn_async(yield_loop()).await;
             self.spawn_async(run_wasm(WASM_TEST)).await;
         }
     }
@@ -122,6 +123,7 @@ async fn yield_loop() {
     loop {
         kernel_common::task_system::task::yield_now().await;
         info!("yielded!");
+        kernel_common::task_system::delay::delay(1).await;
     }
 }
 

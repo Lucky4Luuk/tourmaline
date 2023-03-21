@@ -61,7 +61,6 @@ impl SimpleExecutor {
                         Poll::Pending => {
                             *future_slot = Some(future);
                             drop(future_slot);
-                            self.task_queue.push(task.clone());
                         },
                     }
                 }

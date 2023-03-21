@@ -15,6 +15,7 @@ pub mod task_system;
 pub mod wasm;
 pub mod services;
 pub mod driver_common;
+pub mod rtc;
 
 pub use spin::Mutex;
 pub use spin::MutexGuard;
@@ -47,27 +48,6 @@ impl Promise {
             Some(value)
         } else {
             None
-        }
-    }
-}
-
-/// Very simple sleep function based on the RTC.
-/// It does not read anything more accurate than seconds, so you can only sleep for
-/// whole seconds.
-/// This function can also break when it runs right over the month/year/century barrier.
-/// It does not take into account the current month, year or century.
-pub fn rtc_sleep(seconds: u32) {
-    use cmos_rtc::{ReadRTC, Time};
-    fn time_to_sec(time: Time) -> u32 {
-        time.second as u32 + (time.minute as u32) * 60 + (time.hour as u32) * 60 * 60 + (time.day as u32) * 60 * 60 * 24
-    }
-    let mut cmos = ReadRTC::new(0x00, 0x00);
-    let start = cmos.read();
-    let start_sec = time_to_sec(start);
-    'wait: loop {
-        let now = cmos.read();
-        if time_to_sec(now) > start_sec + seconds {
-            break 'wait;
         }
     }
 }

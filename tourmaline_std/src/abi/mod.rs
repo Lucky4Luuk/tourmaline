@@ -1,4 +1,5 @@
 pub mod driver;
+pub mod host;
 
 #[link(wasm_import_module = "sys_abi")]
 extern "C" {
