@@ -11,5 +11,5 @@ log = "0.4"
 noto-sans-mono-bitmap = { version = "0.2.0", default-features = false, features = ["unicode-basic-latin", "regular", "size_16", "size_20", "size_32"] }
 
 spin = { version = "0.9.5", features = ["mutex"] }
-hashbrown = "0.13.2"
-async-trait = "0.1.64"
+hashbrown = "0.14.5"
+async-trait = "0.1.80"

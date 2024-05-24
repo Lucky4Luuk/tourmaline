@@ -10,7 +10,7 @@ fn main() {
     for y in 0..255 {
         for x in 0..255 {
             unsafe { yield_now(); }
-            let promise = set_pixel(x,y, 255,0,0);
+            let promise = set_pixel(x,y, 0, y as u8, x as u8);
             unsafe { yield_now(); }
             let _ = wait_for(promise);
         }
