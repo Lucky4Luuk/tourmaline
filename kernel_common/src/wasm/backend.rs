@@ -72,21 +72,24 @@ impl WasmModule {
         let values: [Value; 0] = [];
         let mut call_result = entry_point.call_resumable(&mut self.store, ()).map_err(|e| wasmi::Error::from(e));
         loop {
-            if call_result.is_err() {
-                error!("WASM trap encountered: {:?}", call_result);
+            if let Err(ref e) = call_result {
+                match e {
+                    wasmi::Error::Trap(t) => error!("WASM trap encountered: {:?}", t),
+                    _ => error!("WASM error encountered: {:?}", e),
+                }
                 return;
             } else {
                 yield_now().await;
-                match self.store.consume_fuel(0) {
-                    Ok(remaining_fuel) => {
-                        // Make sure we are always above 1 million fuel
-                        if remaining_fuel < 10_000_000 {
-                            self.store.add_fuel(10_000_000);
-                        }
-                    },
-                    // Only happens when we have no fuel remaining before consuming fuel
-                    Err(_) => { self.store.add_fuel(10_000_000); },
-                }
+                // match self.store.consume_fuel(0) {
+                //     Ok(remaining_fuel) => {
+                //         // Make sure we are always above 1 million fuel
+                //         if remaining_fuel < 1_000_000 {
+                //             self.store.add_fuel(1_000_000);
+                //         }
+                //     },
+                //     // Only happens when we have no fuel remaining before consuming fuel
+                //     Err(_) => { self.store.add_fuel(1_000_000); },
+                // }
                 if let TypedResumableCall::Resumable(call) = call_result.unwrap() {
                     call_result = call.resume(&mut self.store, &values[..]);
                 } else {
@@ -107,11 +110,11 @@ pub struct ModuleBuilder {
 impl ModuleBuilder {
     pub fn from_wasm_bytes(data: &[u8]) -> Result<Self> {
         let mut config = Config::default();
-        config.consume_fuel(true);
+        // config.consume_fuel(true);
         let engine = Engine::new(&config);
         let module = Module::new(&engine, data).map_err(Error::msg)?;
         let mut store = Store::new(&engine, ProgStorage::new());
-        let _ = store.add_fuel(100_000_000);
+        // let _ = store.add_fuel(6_000);
 
         Ok(Self {
             module,
@@ -122,7 +125,7 @@ impl ModuleBuilder {
     }
 
     pub fn build(self) -> super::WasmProgram {
-        let mut linker: Linker<()> = Linker::new();
+        let mut linker: Linker<ProgStorage> = Linker::new(self.store.engine());
         for ((namespace, name), func) in self.functions {
             linker.define(&namespace, &name, func).expect("Failed to define function in wasm linker!");
         }

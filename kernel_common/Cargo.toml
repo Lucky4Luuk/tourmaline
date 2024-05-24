@@ -19,4 +19,5 @@ async-trait = "0.1.80"
 
 limine = "0.1.10"
 
-wasmi = { version = "0.27.0", default-features = false }
+wasmi = { version = "0.31.2", default-features = false }
+# wasmtime = { version = "21.0", default-features = false, features = ["runtime"] } # Still broken on no-std lol
