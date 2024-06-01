@@ -1,0 +1,21 @@
+language: rust
+rust: nightly
+os:
+  - linux
+  - osx
+sudo: false
+install:
+  - .travis/docs/install
+script:
+  - cargo rustc --verbose -- -C llvm-args=-verify-machineinstrs
+  - cargo test --verbose
+  - cargo bench --verbose
+  - cargo doc
+after_success:
+  - .travis/docs/after_success
+notifications:
+  irc:
+    channels:
+      - "irc.mozilla.org#libfringe"
+    skip_join: true
+    use_notice: true

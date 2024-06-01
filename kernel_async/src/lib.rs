@@ -30,6 +30,13 @@ pub struct KernelBuilder {
 
 impl KernelBuilder {
     pub fn new(spawner: Spawner, processor_id: usize) -> Self {
+        // let stack = fringe::OwnedStack::new(1 << 16);
+        // let mut gen = unsafe { fringe::Generator::unsafe_new(stack, move |yielder, ()| {
+        //     test_func();
+        //     yielder.suspend(());
+        // }) };
+        // gen.resume(());
+        // gen.resume(());
         Self {
             spawner,
             processor_id,

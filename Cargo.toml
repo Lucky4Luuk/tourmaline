@@ -3,6 +3,7 @@ members = [
     "kernel",
     "kernel_async",
     "kernel_common",
+    "wasm_compiler",
 ]
 exclude = [
     "runner",

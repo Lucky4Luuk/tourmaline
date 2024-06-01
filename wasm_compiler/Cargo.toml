@@ -1,0 +1,10 @@
+[package]
+name = "wasm_compiler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cranelift-codegen = { version = "0.108.1", default-features = false, features = ["core"] }
+cranelift-frontend = { version = "0.108.1", default-features = false, features = ["core"] }
+cranelift-wasm = { version = "0.108.1", default-features = false, features = ["core"] }
+cranelift-module = { version = "0.108.1", default-features = false, features = ["core"] }
