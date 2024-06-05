@@ -331,6 +331,8 @@ version = "1.2.1"
 dependencies = [
  "backtrace",
  "libc",
+ "packed_simd_2",
+ "valgrind_request",
 ]
 
 [[package]]
@@ -438,7 +440,6 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "framebuffer_driver",
- "fringe",
  "hashbrown 0.14.5",
  "kernel_common",
  "log",
@@ -456,6 +457,7 @@ dependencies = [
  "cmos-rtc",
  "conquer-once",
  "crossbeam-queue",
+ "fringe",
  "futures-task",
  "hashbrown 0.14.5",
  "limine",
@@ -480,6 +482,12 @@ name = "libc"
 version = "0.2.155"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
+
+[[package]]
+name = "libm"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fc7aa29613bd6a620df431842069224d8bc9011086b1db4c0e0cd47fa03ec9a"
 
 [[package]]
 name = "libm"
@@ -565,6 +573,16 @@ name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
+
+[[package]]
+name = "packed_simd_2"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1914cd452d8fccd6f9db48147b29fd4ae05bea9dc5d9ad578509f72415de282"
+dependencies = [
+ "cfg-if",
+ "libm 0.1.4",
+]
 
 [[package]]
 name = "paste"
@@ -777,6 +795,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "84a22b9f218b40614adcb3f4ff08b703773ad44fa9423e4e0d346d5db86e4ebc"
 
 [[package]]
+name = "valgrind_request"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0fb139b14473e1350e34439c888e44c805f37b4293d17f87ea920a66a20a99a"
+
+[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -824,7 +848,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf1a7db34bff95b85c261002720c00c3a6168256dcb93041d3fa2054d19856a"
 dependencies = [
  "downcast-rs",
- "libm",
+ "libm 0.2.8",
  "num-traits",
  "paste",
 ]
